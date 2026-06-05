@@ -3,10 +3,8 @@
     "name": "TipidBuddy",
     "slug": "tipidbuddy",
     "version": "1.0.0",
-    "newArchEnabled": false,
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tipidbuddy.app"
@@ -28,23 +26,20 @@
     "plugins": [
       "expo-camera",
       "expo-notifications",
+      "expo-font",
       [
         "expo-build-properties",
         {
-          "android": {
-            "newArchEnabled": false
-          },
-          "ios": {
-            "newArchEnabled": false
-          }
+          "android": { "newArchEnabled": true },
+          "ios": { "newArchEnabled": true }
         }
-      ],
-      "expo-font"
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "eec09406-6eb0-4e49-8d2b-92b22765b237"
+        "projectId": "04cdf2e4-1d14-47a3-af0e-c06da60fa166"
       }
-    }
+    },
+    "owner": "m4eca"
   }
 }
