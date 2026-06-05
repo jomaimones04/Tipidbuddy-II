@@ -14,6 +14,7 @@ import { COLORS, SPACING, DEFAULT_CATEGORIES } from '@constants/index';
 import { formatPesoAmount } from '@utils/index';
 import * as Haptics from 'expo-haptics';
 import { SelectStoreSheet } from '@components/SelectStoreSheet';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export const CartDetailScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
@@ -89,7 +90,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    Alert.alert('Delete Item', 'Are you sure you want to remove this item?', [
+    Alert.alert('Delete Item', 'Delete this item?', [
       { text: 'Cancel', onPress: () => { } },
       {
         text: 'Delete',
@@ -181,9 +182,9 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     if (type === 'manual') {
       navigation.navigate('AddEditItem', { cartId });
     } else if (type === 'voice') {
-      navigation.navigate('VoiceInput', { cartId });
+      navigation.navigate('ComingSoon', { featureName: 'Voice Input', icon: 'mic' });
     } else if (type === 'camera') {
-      navigation.navigate('CameraScanner', { cartId });
+      navigation.navigate('ComingSoon', { featureName: 'Camera Scanner', icon: 'camera-alt' });
     }
   };
 
@@ -202,6 +203,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
               <TouchableOpacity onPress={() => setShowStoreSheet(true)} disabled={cart.isCompleted}>
                 <Text style={styles.storeName}>{getStoreName(cart.storeId)}</Text>
               </TouchableOpacity>
+              <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
             </View>
           </View>
         </View>
@@ -245,7 +247,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
 
         {/* Empty State */}
         <View style={styles.emptyStateContainer}>
-          <Text style={styles.emptyIcon}>🛒</Text>
+          <MaterialIcons name="shopping-cart" size={64} color={COLORS.textLight} style={styles.emptyIcon} />
           <Text style={styles.emptyTitle}>No items yet</Text>
           <Text style={styles.emptySubtitle}>Add your first item to get started</Text>
           <TouchableOpacity
@@ -265,21 +267,21 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                   style={styles.fabOption}
                   onPress={() => handleAddItem('manual')}
                 >
-                  <Text style={styles.fabIcon}>✏️</Text>
+                  <MaterialIcons name="edit" size={24} color={COLORS.white} />
                   <Text style={styles.fabLabel}>Manually</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.fabOption}
                   onPress={() => handleAddItem('voice')}
                 >
-                  <Text style={styles.fabIcon}>🎤</Text>
+                  <MaterialIcons name="mic" size={24} color={COLORS.white} />
                   <Text style={styles.fabLabel}>Voice</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.fabOption}
                   onPress={() => handleAddItem('camera')}
                 >
-                  <Text style={styles.fabIcon}>📷</Text>
+                  <MaterialIcons name="camera-alt" size={24} color={COLORS.white} />
                   <Text style={styles.fabLabel}>Scan</Text>
                 </TouchableOpacity>
               </>
@@ -308,6 +310,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
             <TouchableOpacity onPress={() => setShowStoreSheet(true)} disabled={cart.isCompleted}>
               <Text style={styles.storeName}>{getStoreName(cart.storeId)}</Text>
             </TouchableOpacity>
+            <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
           </View>
         </View>
       </View>
@@ -403,7 +406,10 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                   }}
                   style={styles.compareLink}
                 >
-                  <Text style={styles.compareLinkText}>📍 Compare Stores</Text>
+                  <View style={styles.compareRow}>
+                    <MaterialIcons name="place" size={14} color={COLORS.primary} />
+                    <Text style={styles.compareLinkText}>Compare Stores</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
 
@@ -453,12 +459,22 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                 )}
               </Text>
               {!cart.isCompleted && (
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => handleDeleteItem(item.id)}
-                >
-                  <Text style={styles.deleteIcon}>🗑️</Text>
-                </TouchableOpacity>
+                <>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() =>
+                      navigation.navigate('AddEditItem', { cartId, itemId: item.id })
+                    }
+                  >
+                    <MaterialIcons name="edit" size={18} color="#6B7280" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDeleteItem(item.id)}
+                  >
+                    <MaterialIcons name="delete-outline" size={18} color="#E84040" />
+                  </TouchableOpacity>
+                </>
               )}
             </View>
           </View>
@@ -491,21 +507,21 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                 style={styles.fabOption}
                 onPress={() => handleAddItem('manual')}
               >
-                <Text style={styles.fabIcon}>✏️</Text>
+                <MaterialIcons name="edit" size={24} color={COLORS.white} />
                 <Text style={styles.fabLabel}>Manually</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.fabOption}
                 onPress={() => handleAddItem('voice')}
               >
-                <Text style={styles.fabIcon}>🎤</Text>
+                <MaterialIcons name="mic" size={24} color={COLORS.white} />
                 <Text style={styles.fabLabel}>Voice</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.fabOption}
                 onPress={() => handleAddItem('camera')}
               >
-                <Text style={styles.fabIcon}>📷</Text>
+                <MaterialIcons name="camera-alt" size={24} color={COLORS.white} />
                 <Text style={styles.fabLabel}>Scan</Text>
               </TouchableOpacity>
             </>
@@ -535,7 +551,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   headerContainer: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   header: {
     flexDirection: 'row',
@@ -543,8 +561,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   headerCenter: {
     flex: 1,
@@ -553,18 +569,24 @@ const styles = StyleSheet.create({
   backButton: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.white,
+    color: COLORS.text,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.white,
+    color: COLORS.text,
   },
   storeName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: SPACING.xs,
+    color: COLORS.textLight,
+    marginTop: 2,
+  },
+  dateText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: COLORS.textLight,
+    marginTop: 4,
   },
   placeholder: {
     width: 50,
@@ -681,7 +703,8 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
   },
   itemRight: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.sm,
   },
   itemPrice: {
@@ -689,15 +712,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
   },
-  deleteButton: {
-    padding: SPACING.sm,
-  },
-  deleteIcon: {
-    fontSize: 16,
+  actionButton: {
+    padding: 6,
   },
   fabContainer: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 76,
     right: SPACING.lg,
     gap: SPACING.md,
   },
@@ -821,5 +841,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.primary,
     fontWeight: '600',
+  },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 });

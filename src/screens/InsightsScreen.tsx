@@ -112,9 +112,8 @@ export const InsightsScreen = ({ navigation }: any) => {
 
   const getMotivationalText = () => {
     if (stats.savedAmount > 0) {
-      return `You saved ₱${formatPesoAmount(stats.savedAmount)} this ${
-        timeRange === '7days' ? 'week' : 'month'
-      }! More money in your pocket 🙌`;
+      return `You saved ₱${formatPesoAmount(stats.savedAmount)} this ${timeRange === '7days' ? 'week' : 'month'
+        }! More money in your pocket 🙌`;
     }
     return MOTIVATIONAL_MESSAGES[getWeekMessageIndex(startDate)];
   };
@@ -182,43 +181,43 @@ export const InsightsScreen = ({ navigation }: any) => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[styles.toggleButton, timeRange === '7days' && styles.toggleButtonActive]}
-            onPress={() => {
-              setTimeRange('7days');
-              setDateOffset(0);
-            }}
-          >
-            <Text style={[styles.toggleText, timeRange === '7days' && styles.toggleTextActive]}>
-              7 Days
-            </Text>
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[styles.toggleButton, timeRange === '7days' && styles.toggleButtonActive]}
+              onPress={() => {
+                setTimeRange('7days');
+                setDateOffset(0);
+              }}
+            >
+              <Text style={[styles.toggleText, timeRange === '7days' && styles.toggleTextActive]}>
+                7 Days
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleButton, timeRange === 'month' && styles.toggleButtonActive]}
+              onPress={() => {
+                setTimeRange('month');
+                setDateOffset(0);
+              }}
+            >
+              <Text style={[styles.toggleText, timeRange === 'month' && styles.toggleTextActive]}>
+                Month
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Date range */}
+        <View style={styles.dateRangeContainer}>
+          <TouchableOpacity onPress={() => setDateOffset(dateOffset - 1)} hitSlop={8}>
+            <Text style={styles.arrowButton}>‹</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleButton, timeRange === 'month' && styles.toggleButtonActive]}
-            onPress={() => {
-              setTimeRange('month');
-              setDateOffset(0);
-            }}
-          >
-            <Text style={[styles.toggleText, timeRange === 'month' && styles.toggleTextActive]}>
-              Month
-            </Text>
+          <Text style={styles.dateRangeText}>{formatDateRange()}</Text>
+          <TouchableOpacity onPress={() => setDateOffset(dateOffset + 1)} hitSlop={8}>
+            <Text style={styles.arrowButton}>›</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Date range */}
-      <View style={styles.dateRangeContainer}>
-        <TouchableOpacity onPress={() => setDateOffset(dateOffset - 1)} hitSlop={8}>
-          <Text style={styles.arrowButton}>‹</Text>
-        </TouchableOpacity>
-        <Text style={styles.dateRangeText}>{formatDateRange()}</Text>
-        <TouchableOpacity onPress={() => setDateOffset(dateOffset + 1)} hitSlop={8}>
-          <Text style={styles.arrowButton}>›</Text>
-        </TouchableOpacity>
-      </View>
 
         {cartsInRange.length === 0 ? (
           <View style={styles.emptyStateContainer}>

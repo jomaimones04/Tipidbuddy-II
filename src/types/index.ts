@@ -118,6 +118,8 @@ export type RootStackParamList = {
   SettingsMain: undefined;
   CategoryManager: undefined;
   FamilySharing: undefined;
+  Templates: undefined;
+  ComingSoon: { featureName: string; icon: string };
 };
 
 export type TabParamList = {

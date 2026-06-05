@@ -67,7 +67,26 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
   const [name, setName] = useState(initialName);
   const [quantity, setQuantity] = useState(initialQuantityUnit.amount);
   const [unit, setUnit] = useState(initialQuantityUnit.unit);
+  const [customUnit, setCustomUnit] = useState(
+    initialQuantityUnit.unit !== '' && !['pcs', 'kg', 'g', 'L', 'mL', 'pack', 'bottle', 'loaf', 'dozen', 'box', 'sachet', 'tray'].includes(initialQuantityUnit.unit)
+      ? initialQuantityUnit.unit
+      : ''
+  );
   const [estimatedPrice, setEstimatedPrice] = useState(initialPrice);
+
+  const handleSelectChip = (u: string) => {
+    setUnit(u);
+    setCustomUnit('');
+  };
+
+  const handleCustomUnitChange = (text: string) => {
+    setCustomUnit(text);
+    setUnit(text);
+  };
+
+  const isChipSelected = (u: string) => {
+    return unit === u && customUnit === '';
+  };
 
   // Auto-detect category for prefilled name if present, otherwise fallback
   const initialCategory = (() => {
@@ -250,7 +269,7 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
     navigation.goBack();
   };
 
-  const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'pack', 'bottle', 'loaf', 'dozen'];
+  const UNITS = ['pcs', 'kg', 'g', 'L', 'mL', 'pack', 'bottle', 'loaf', 'dozen', 'box', 'sachet', 'tray'];
 
   return (
     <KeyboardAvoidingView
@@ -332,47 +351,60 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
             </View>
           )}
 
-          {/* Quantity and Unit */}
-          <View style={[styles.field, styles.row]}>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Quantity *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="0"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="decimal-pad"
-                placeholderTextColor={COLORS.textLight}
-              />
-            </View>
-            <View style={styles.halfField}>
-              <Text style={styles.label}>Unit</Text>
-              <TouchableOpacity
-                style={[
-                  styles.input,
-                  styles.unitPickerButton,
-                ]}
-              >
-                <Text style={unit ? styles.unitPickerText : styles.unitPickerPlaceholder}>
-                  {unit || 'Select'}
-                </Text>
-                <Text style={styles.chevron}>▼</Text>
-              </TouchableOpacity>
-              {/* Simple unit list - could be enhanced with modal */}
-              {unit === '' && (
-                <View style={styles.unitList}>
-                  {UNITS.slice(0, 3).map((u) => (
-                    <TouchableOpacity
-                      key={u}
-                      onPress={() => setUnit(u)}
-                      style={styles.unitOption}
+          {/* Quantity */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Quantity *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="decimal-pad"
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
+
+          {/* Unit Chips and Custom Input */}
+          <View style={styles.field}>
+            <Text style={styles.label}>Unit</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipsScrollView}
+              contentContainerStyle={styles.chipsContainer}
+            >
+              {UNITS.map((u) => {
+                const selected = isChipSelected(u);
+                return (
+                  <TouchableOpacity
+                    key={u}
+                    onPress={() => handleSelectChip(u)}
+                    style={[
+                      styles.chip,
+                      selected ? styles.chipSelected : styles.chipUnselected,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selected ? styles.chipTextSelected : styles.chipTextUnselected,
+                      ]}
                     >
-                      <Text style={styles.unitOptionText}>{u}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
+                      {u}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={styles.subLabel}>Or type custom unit:</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. box, sachet, tray"
+              value={customUnit}
+              onChangeText={handleCustomUnitChange}
+              placeholderTextColor={COLORS.textLight}
+            />
           </View>
 
           {/* Estimated Price */}
@@ -569,37 +601,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.text,
   },
-  unitPickerButton: {
+  chipsScrollView: {
+    marginVertical: 4,
+  },
+  chipsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  unitPickerText: {
-    fontSize: 14,
-    color: COLORS.text,
-    fontWeight: '500',
+  chipSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
-  unitPickerPlaceholder: {
-    fontSize: 14,
-    color: COLORS.textLight,
-  },
-  unitList: {
-    marginTop: SPACING.sm,
-    borderWidth: 1,
+  chipUnselected: {
+    backgroundColor: 'transparent',
     borderColor: COLORS.border,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: COLORS.white,
   },
-  unitOption: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  unitOptionText: {
+  chipText: {
     fontSize: 13,
-    color: COLORS.text,
+    fontWeight: '600',
+  },
+  chipTextSelected: {
+    color: '#FFFFFF',
+  },
+  chipTextUnselected: {
+    color: '#6B7280',
+  },
+  subLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.textLight,
+    marginTop: 4,
   },
   categoryButton: {
     flexDirection: 'row',

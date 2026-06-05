@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { CardStyleInterpolators } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HomeScreen } from '@screens/HomeScreen';
 import { CartDetailScreen } from '@screens/CartDetailScreen';
@@ -22,6 +23,8 @@ import { StoreComparisonScreen } from '@screens/StoreComparisonScreen';
 import { CategoryManagerScreen } from '@screens/CategoryManagerScreen';
 import { FamilySharingScreen } from '@screens/FamilySharingScreen';
 import { ExportModal } from '@screens/ExportModal';
+import { TemplatesScreen } from '@screens/TemplatesScreen';
+import { ComingSoonScreen } from '@screens/ComingSoonScreen';
 
 import { COLORS } from '@constants/index';
 import type { RootStackParamList, TabParamList } from '../types/index';
@@ -37,7 +40,7 @@ const getHeaderConfig = (title: string) => ({
   headerBackVisible: false,
   headerStyle: {
     backgroundColor: COLORS.primary,
-    height: Platform.OS === 'android' ? 70 : 70,
+    height: Platform.OS === 'android' ? 90 : 90,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -168,6 +171,14 @@ const HomeTabStack = () => {
           ...slideFromBottomOptions,
         }}
       />
+      <Stack.Screen
+        name="ComingSoon"
+        component={ComingSoonScreen}
+        options={{
+          headerShown: false,
+          ...slideFromBottomOptions,
+        }}
+      />
     </Stack.Navigator>
   );
 };
@@ -245,7 +256,23 @@ const InsightsTabStack = () => (
   </Stack.Navigator>
 );
 
+const TemplatesTabStack = () => (
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: true,
+      ...slideFromRightOptions,
+    }}
+  >
+    <Stack.Screen
+      name="Templates"
+      component={TemplatesScreen}
+      options={getHeaderConfig('Templates')}
+    />
+  </Stack.Navigator>
+);
+
 const TabNavigator = () => {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -264,9 +291,9 @@ const TabNavigator = () => {
           borderTopWidth: 1,
           borderTopColor: COLORS.border,
           backgroundColor: COLORS.white,
-          height: 68, // Increased from default ~50
-          paddingBottom: 8, // Add padding for safe area
-          paddingTop: 4,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
