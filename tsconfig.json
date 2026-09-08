@@ -25,6 +25,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@components/*": [
         "src/components/*"
