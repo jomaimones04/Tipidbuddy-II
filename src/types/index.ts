@@ -102,7 +102,21 @@ export type RootStackParamList = {
   Home: undefined;
   CartDetail: { cartId: string };
   CartForm: { cartId?: string };
-  AddEditItem: { cartId: string; itemId?: string; scannedData?: any };
+  AddEditItem: {
+    cartId: string;
+    itemId?: string;
+    scannedData?: any;
+    detectedName?: string;
+    detectedPrice?: string;
+    detectedQuantity?: string | number;
+    detectedUnit?: string;
+    detectedBarcode?: string;
+    detectedBarcodeType?: string;
+    detectedBrand?: string;
+    detectedCategory?: string;
+    detectedDescription?: string;
+    detectedImageUrl?: string;
+  };
   VoiceInput: { cartId: string };
   CameraScanner: { cartId: string };
   PriceHistory: { itemId: string; cartId: string };

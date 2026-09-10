@@ -22,6 +22,8 @@ import {
   detectCategory,
   splitQuantityString,
 } from '@utils/index';
+import { saveManualProduct, saveStorePrice } from '../api/products';
+import type { Category } from '../types';
 
 interface HistoricalPurchase {
   storeId: string;
@@ -39,6 +41,13 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
     detectedName,
     detectedPrice,
     detectedQuantity,
+    detectedUnit,
+    detectedBarcode,
+    detectedBarcodeType,
+    detectedBrand,
+    detectedCategory,
+    detectedDescription,
+    detectedImageUrl,
   } = route.params || {};
   const { carts, categories, updateCart, getStoreName, getRecordsForItemName } =
     useGroceryStore();
@@ -57,14 +66,19 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
       return { amount: existingItem.quantity.toString(), unit: existingItem.unit || '' };
     }
 
-    const rawQty = detectedQuantity || prefill?.quantity?.toString() || '';
-    if (rawQty) {
-      return splitQuantityString(rawQty);
-    }
-    return { amount: '', unit: prefill?.unit || '' };
+    const rawQty =
+      detectedQuantity !== undefined && detectedQuantity !== null && detectedQuantity !== ''
+        ? String(detectedQuantity)
+        : prefill?.quantity?.toString() || '';
+    const split = rawQty ? splitQuantityString(rawQty) : { amount: '', unit: '' };
+    return {
+      amount: split.amount || (rawQty && !split.unit ? rawQty : ''),
+      unit: detectedUnit || prefill?.unit || split.unit || '',
+    };
   })();
 
   const [name, setName] = useState(initialName);
+  const [brand, setBrand] = useState(detectedBrand || '');
   const [quantity, setQuantity] = useState(initialQuantityUnit.amount);
   const [unit, setUnit] = useState(initialQuantityUnit.unit);
   const [customUnit, setCustomUnit] = useState(
@@ -88,11 +102,34 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
     return unit === u && customUnit === '';
   };
 
+  const matchAppCategory = (rawCategory?: string, itemName?: string): string => {
+    const pickFromList = (value?: string) => {
+      if (!value) return '';
+      const lower = value.toLowerCase();
+      const match = categories.find((c: Category) => {
+        const shortName = c.name.split('(')[0].trim().toLowerCase();
+        return (
+          c.name.toLowerCase() === lower ||
+          c.name.toLowerCase().includes(lower) ||
+          lower.includes(shortName)
+        );
+      });
+      return match?.name || '';
+    };
+
+    return (
+      pickFromList(rawCategory) ||
+      (rawCategory ? detectCategory(rawCategory) : '') ||
+      (itemName ? detectCategory(itemName) : '') ||
+      categories[0]?.name ||
+      ''
+    );
+  };
+
   // Auto-detect category for prefilled name if present, otherwise fallback
   const initialCategory = (() => {
     if (existingItem) return existingItem.category;
-    if (initialName) return detectCategory(initialName);
-    return categories[0]?.name || '';
+    return matchAppCategory(detectedCategory, initialName);
   })();
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
@@ -266,6 +303,25 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
 
     const updatedCart = { ...cart, items: updatedItems, totalSpent };
     await updateCart(updatedCart);
+
+    if (detectedBarcode && name.trim()) {
+      void saveManualProduct({
+        barcode: detectedBarcode,
+        barcodeType: detectedBarcodeType,
+        name: name.trim(),
+        brand: brand.trim(),
+        category: selectedCategory,
+        description: detectedDescription || '',
+        imageUrl: detectedImageUrl || '',
+        source: 'manual',
+      });
+
+      const storeName = getStoreName(cart.storeId);
+      if (storeName) {
+        void saveStorePrice(detectedBarcode, storeName, numPrice);
+      }
+    }
+
     navigation.goBack();
   };
 
@@ -316,6 +372,27 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
               placeholderTextColor={COLORS.textLight}
             />
           </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Brand</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Nescafé"
+              value={brand}
+              onChangeText={setBrand}
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
+
+          {detectedBarcode ? (
+            <View style={styles.barcodeInfo}>
+              <Text style={styles.barcodeInfoLabel}>📦 Scanned barcode</Text>
+              <Text style={styles.barcodeInfoValue}>{detectedBarcode}</Text>
+              {detectedBarcodeType ? (
+                <Text style={styles.barcodeInfoType}>{detectedBarcodeType}</Text>
+              ) : null}
+            </View>
+          ) : null}
 
           {/* Suggestions Card */}
           {name.trim().length > 0 && lastBought && (
@@ -553,6 +630,30 @@ const styles = StyleSheet.create({
   trendIcon: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  barcodeInfo: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 12,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    gap: 4,
+  },
+  barcodeInfoLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textLight,
+  },
+  barcodeInfoValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  barcodeInfoType: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textLight,
   },
   field: {
     gap: SPACING.sm,

@@ -104,47 +104,7 @@ export * from './animations';
 export * from './storeBreakdown';
 export * from './categoryDetector';
 export * from './textCleaner';
-
-// Voice input parser
-export const parseVoiceInput = (
-  input: string
-): {
-  name?: string;
-  quantity?: number;
-  unit?: string;
-  price?: number;
-} => {
-  // Simple parser for Filipino/English input
-  // Example: "2 kilo ng bigas, 80 piso" or "2 kilos of rice for 80 pesos"
-
-  const result: any = {};
-
-  // Extract quantity
-  const quantityMatch = input.match(/(\d+(?:\.\d+)?)\s*(kilo|kg|pieces|pcs|piece|pc|box|bottle|pack|bundles?)/i);
-  if (quantityMatch) {
-    result.quantity = parseFloat(quantityMatch[1]);
-    result.unit = quantityMatch[2];
-  }
-
-  // Extract price
-  const priceMatch = input.match(/(\d+(?:\.\d+)?)\s*(piso|peso|pesos|php|₱)/i);
-  if (priceMatch) {
-    result.price = parseFloat(priceMatch[1]);
-  }
-
-  // Extract item name (words that aren't numbers, units, or price keywords)
-  const cleanInput = input
-    .replace(/(\d+(?:\.\d+)?)\s*(kilo|kg|pieces|pcs|piece|pc|box|bottle|pack|bundles?)/i, '')
-    .replace(/(\d+(?:\.\d+)?)\s*(piso|peso|pesos|php|₱)/i, '')
-    .replace(/(ng|of|for|,)/i, '')
-    .trim();
-
-  if (cleanInput) {
-    result.name = cleanInput;
-  }
-
-  return result;
-};
+export * from './voiceParser';
 
 // Validation utilities
 export const isValidPrice = (price: any): boolean => {

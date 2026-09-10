@@ -1,0 +1,86 @@
+const OPEN_FOOD_FACTS_URL = 'https://world.openfoodfacts.org/api/v2/product';
+const REQUEST_TIMEOUT_MS = 8000;
+
+const firstValue = (...values) => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+};
+
+const firstCategory = (categories) => {
+  if (!categories || typeof categories !== 'string') {
+    return '';
+  }
+  return categories.split(',')[0].trim();
+};
+
+const normalizeOpenFoodFactsProduct = (product, barcode, barcodeType) => {
+  const name = firstValue(
+    product.product_name,
+    product.product_name_en,
+    product.generic_name,
+    'Unknown Product'
+  );
+
+  return {
+    barcode: firstValue(product.code, barcode),
+    barcodeType: barcodeType || '',
+    name,
+    brand: firstValue(product.brands),
+    category: firstCategory(product.categories),
+    description: firstValue(product.generic_name, product.product_name),
+    imageUrl: firstValue(product.image_url, product.image_front_url),
+    source: 'openfoodfacts',
+  };
+};
+
+const fetchOpenFoodFactsProduct = async (barcode, barcodeType) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const url = `${OPEN_FOOD_FACTS_URL}/${encodeURIComponent(barcode)}?fields=code,product_name,product_name_en,brands,categories,generic_name,image_url,image_front_url`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'TipidBuddy/1.0 (capstone grocery app)',
+      },
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = new Error(`Open Food Facts HTTP ${response.status}`);
+      error.code = 'OFF_UNAVAILABLE';
+      throw error;
+    }
+
+    const data = await response.json();
+    if (!data || data.status !== 1 || !data.product) {
+      return null;
+    }
+
+    return normalizeOpenFoodFactsProduct(data.product, barcode, barcodeType);
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      const timeoutError = new Error('Open Food Facts timed out');
+      timeoutError.code = 'OFF_UNAVAILABLE';
+      throw timeoutError;
+    }
+    if (error.code === 'OFF_UNAVAILABLE') {
+      throw error;
+    }
+    const unavailable = new Error(error.message || 'Open Food Facts unavailable');
+    unavailable.code = 'OFF_UNAVAILABLE';
+    throw unavailable;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+module.exports = {
+  fetchOpenFoodFactsProduct,
+};

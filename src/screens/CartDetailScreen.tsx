@@ -182,9 +182,9 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     if (type === 'manual') {
       navigation.navigate('AddEditItem', { cartId });
     } else if (type === 'voice') {
-      navigation.navigate('ComingSoon', { featureName: 'Voice Input', icon: 'mic' });
+      navigation.navigate('VoiceInput', { cartId });
     } else if (type === 'camera') {
-      navigation.navigate('ComingSoon', { featureName: 'Camera Scanner', icon: 'camera-alt' });
+      navigation.navigate('CameraScanner', { cartId });
     }
   };
 

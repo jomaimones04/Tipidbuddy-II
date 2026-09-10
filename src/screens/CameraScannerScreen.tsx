@@ -8,11 +8,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import type { BarcodeScanningResult, BarcodeType } from 'expo-camera';
 import { WebView } from 'react-native-webview';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { SPACING } from '@constants/index';
 import { useTheme } from '../hooks/useTheme';
 import { parseOCRResult } from '@utils/index';
+import { lookupProductByBarcode } from '../api/products';
+import type { DetectedProduct } from '../types/product';
 
 // HTML content for hidden WebView executing Tesseract.js in JS environment
 const TESSERACT_HTML = `
@@ -51,6 +54,35 @@ const TESSERACT_HTML = `
 </html>
 `;
 
+const SUPPORTED_BARCODE_TYPES: BarcodeType[] = [
+  'ean13',
+  'ean8',
+  'upc_a',
+  'upc_e',
+  'code39',
+  'code93',
+  'code128',
+  'itf14',
+];
+
+const BARCODE_COOLDOWN_MS = 1500;
+
+const formatBarcodeType = (type: string): string => {
+  const normalized = type.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const labels: Record<string, string> = {
+    ean13: 'EAN-13',
+    ean8: 'EAN-8',
+    upca: 'UPC-A',
+    upce: 'UPC-E',
+    code39: 'CODE-39',
+    code93: 'CODE-93',
+    code128: 'CODE-128',
+    itf14: 'ITF-14',
+    itf: 'ITF-14',
+  };
+  return labels[normalized] || type.toUpperCase();
+};
+
 export const CameraScannerScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
   const cameraRef = useRef<CameraView | null>(null);
@@ -69,6 +101,13 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
     quantity: '',
   });
 
+  const [detectedBarcode, setDetectedBarcode] = useState<string | null>(null);
+  const [detectedBarcodeType, setDetectedBarcodeType] = useState<string | null>(null);
+  const [detectedProduct, setDetectedProduct] = useState<DetectedProduct | null>(null);
+  const [isBarcodeScanned, setIsBarcodeScanned] = useState(false);
+  const [isBarcodeProcessing, setIsBarcodeProcessing] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
+
   const theme = useTheme();
   const styles = React.useMemo(() => getStyles(theme), [theme]);
 
@@ -77,6 +116,9 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
   const liveScanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLiveProcessing = useRef(false);
+  const barcodeLockRef = useRef(false);
+  const lastBarcodeRef = useRef<string | null>(null);
+  const barcodeCooldownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Log active engine on mount
   useEffect(() => {
@@ -161,21 +203,153 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       if (fallbackTimeoutRef.current) {
         clearTimeout(fallbackTimeoutRef.current);
       }
+      if (barcodeCooldownTimeoutRef.current) {
+        clearTimeout(barcodeCooldownTimeoutRef.current);
+      }
     };
   }, [permission, isProcessing]);
 
   // Check if all 3 fields are populated
   const allFieldsFound = !!(liveDetected.name && liveDetected.price && liveDetected.quantity);
 
-  // Navigate directly using live values
-  const handleUseLiveDetected = () => {
-    setStatusMessage(null);
+  const navigateToAddItem = (
+    detectedName: string,
+    detectedPrice: string,
+    detectedQuantity: string,
+    barcodeValue?: string | null,
+    barcodeType?: string | null,
+    product?: DetectedProduct | null
+  ) => {
     navigation.navigate('AddEditItem', {
       cartId,
-      detectedName: liveDetected.name,
-      detectedPrice: liveDetected.price,
-      detectedQuantity: liveDetected.quantity,
+      detectedName: product?.name || detectedName,
+      detectedPrice,
+      detectedQuantity,
+      detectedBarcode: barcodeValue || undefined,
+      detectedBarcodeType: barcodeType || undefined,
+      detectedBrand: product?.brand,
+      detectedCategory: product?.category,
+      detectedDescription: product?.description,
+      detectedImageUrl: product?.imageUrl,
     });
+  };
+
+  const handleBarcodeScanned = async (scanningResult: BarcodeScanningResult) => {
+    try {
+      if (
+        isProcessing ||
+        isBarcodeProcessing ||
+        barcodeLockRef.current ||
+        isBarcodeScanned
+      ) {
+        return;
+      }
+
+      const { type, data } = scanningResult;
+      const barcodeValue = (data || '').trim();
+      if (!barcodeValue) {
+        return;
+      }
+
+      if (lastBarcodeRef.current === barcodeValue) {
+        return;
+      }
+
+      barcodeLockRef.current = true;
+      lastBarcodeRef.current = barcodeValue;
+
+      const rawType = type.toLowerCase();
+      console.log('Barcode type:', type);
+      console.log('Barcode data:', barcodeValue);
+
+      setDetectedBarcode(barcodeValue);
+      setDetectedBarcodeType(rawType);
+      setDetectedProduct(null);
+      setBarcodeError(null);
+      setIsBarcodeScanned(true);
+      setIsBarcodeProcessing(true);
+
+      const result = await lookupProductByBarcode(barcodeValue, rawType);
+      if (result.success && result.found && result.product) {
+        setDetectedProduct(result.product);
+        setBarcodeError(null);
+      } else if (result.success && !result.found) {
+        setDetectedProduct(null);
+        setBarcodeError('Product not found in database.');
+      } else {
+        setDetectedProduct(null);
+        setBarcodeError(
+          result.message || 'Unable to identify product. You can add it manually.'
+        );
+      }
+
+      if (barcodeCooldownTimeoutRef.current) {
+        clearTimeout(barcodeCooldownTimeoutRef.current);
+      }
+      barcodeCooldownTimeoutRef.current = setTimeout(() => {
+        barcodeLockRef.current = false;
+      }, BARCODE_COOLDOWN_MS);
+    } catch (error) {
+      console.log('Barcode scanning error:', error);
+      setBarcodeError('Unable to identify product. You can add it manually.');
+      barcodeLockRef.current = false;
+    } finally {
+      setIsBarcodeProcessing(false);
+    }
+  };
+
+  const handleScanAgain = () => {
+    if (isProcessing || isBarcodeProcessing) return;
+    setDetectedBarcode(null);
+    setDetectedBarcodeType(null);
+    setDetectedProduct(null);
+    setBarcodeError(null);
+    setIsBarcodeScanned(false);
+    lastBarcodeRef.current = null;
+    barcodeLockRef.current = false;
+    if (barcodeCooldownTimeoutRef.current) {
+      clearTimeout(barcodeCooldownTimeoutRef.current);
+      barcodeCooldownTimeoutRef.current = null;
+    }
+  };
+
+  const handleUseLiveDetected = () => {
+    if (isProcessing || isBarcodeProcessing) return;
+    setStatusMessage(null);
+    navigateToAddItem(
+      liveDetected.name,
+      liveDetected.price,
+      liveDetected.quantity,
+      detectedBarcode,
+      detectedBarcodeType,
+      detectedProduct
+    );
+  };
+
+  const handleUseBarcode = () => {
+    if (isProcessing || isBarcodeProcessing || !detectedBarcode) return;
+    setStatusMessage(null);
+    navigateToAddItem(
+      liveDetected.name || detectedProduct?.name || '',
+      liveDetected.price,
+      liveDetected.quantity,
+      detectedBarcode,
+      detectedBarcodeType,
+      detectedProduct
+    );
+  };
+
+  const handleAddManually = () => {
+    if (isProcessing || isBarcodeProcessing || !detectedBarcode) return;
+    setStatusMessage(null);
+    navigateToAddItem(
+      liveDetected.name,
+      liveDetected.price,
+      liveDetected.quantity,
+      detectedBarcode,
+      detectedBarcodeType,
+      detectedProduct
+    );
   };
 
   // Handle final OCR results (when manual capture completes)
@@ -185,12 +359,14 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
 
     if (parsed.name || parsed.price || parsed.quantity) {
       setStatusMessage(null);
-      navigation.navigate('AddEditItem', {
-        cartId,
-        detectedName: parsed.name,
-        detectedPrice: parsed.price,
-        detectedQuantity: parsed.quantity,
-      });
+      navigateToAddItem(
+        parsed.name,
+        parsed.price,
+        parsed.quantity,
+        detectedBarcode,
+        detectedBarcodeType,
+        detectedProduct
+      );
     } else {
       setStatusMessage('No text found — try again');
     }
@@ -233,7 +409,7 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
   };
 
   const handleTakePicture = async () => {
-    if (!cameraRef.current || isProcessing) return;
+    if (!cameraRef.current || isProcessing || isBarcodeProcessing) return;
 
     try {
       setIsProcessing(true);
@@ -317,6 +493,17 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
+        barcodeScannerSettings={{
+          barcodeTypes: SUPPORTED_BARCODE_TYPES,
+        }}
+        onBarcodeScanned={
+          isBarcodeScanned || isBarcodeProcessing || isProcessing
+            ? undefined
+            : handleBarcodeScanned
+        }
+        onMountError={(event) => {
+          console.log('Camera mount error:', event.message);
+        }}
       />
 
       {/* Layer 2 — Scanning guide box overlay (centered) */}
@@ -341,13 +528,76 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
         )}
       </View>
 
+      {isBarcodeScanned && (
+        <View style={styles.barcodeResultPanel}>
+          {isBarcodeProcessing ? (
+            <>
+              <Text style={styles.previewTitle}>Identifying product...</Text>
+              <ActivityIndicator size="small" color={theme.accent} />
+              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+            </>
+          ) : detectedProduct ? (
+            <>
+              <Text style={styles.previewTitle}>Product Detected</Text>
+              <Text style={styles.previewValue}>☑ {detectedProduct.name}</Text>
+              {detectedProduct.brand ? (
+                <Text style={styles.previewValue}>Brand: {detectedProduct.brand}</Text>
+              ) : null}
+              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+              <Text style={styles.previewValue}>
+                Type: {formatBarcodeType(detectedBarcodeType || '')}
+              </Text>
+              {detectedProduct.category ? (
+                <Text style={styles.previewValue}>Category: {detectedProduct.category}</Text>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text style={styles.previewTitle}>Product Not Found</Text>
+              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+              <Text style={styles.statusText}>
+                {barcodeError || 'Product not found in database.'}
+              </Text>
+            </>
+          )}
+        </View>
+      )}
+
       {/* Layer 4 — Scan/Capture button overlay (bottom center) */}
       <View style={styles.controls}>
+        {isBarcodeScanned && (
+          <View style={styles.barcodeActions}>
+            <TouchableOpacity
+              style={styles.scanAgainButton}
+              onPress={handleScanAgain}
+              disabled={isProcessing || isBarcodeProcessing}
+            >
+              <Text style={styles.scanAgainButtonText}>Scan Again</Text>
+            </TouchableOpacity>
+            {detectedProduct ? (
+              <TouchableOpacity
+                style={styles.useBarcodeButton}
+                onPress={handleUseBarcode}
+                disabled={isProcessing || isBarcodeProcessing}
+              >
+                <Text style={styles.useThisButtonText}>✅ Use This</Text>
+              </TouchableOpacity>
+            ) : !isBarcodeProcessing ? (
+              <TouchableOpacity
+                style={styles.useBarcodeButton}
+                onPress={handleAddManually}
+                disabled={isProcessing}
+              >
+                <Text style={styles.useThisButtonText}>Add Manually</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        )}
         {allFieldsFound ? (
           <TouchableOpacity
             style={styles.useThisButton}
             onPress={handleUseLiveDetected}
-            disabled={isProcessing}
+            disabled={isProcessing || isBarcodeProcessing}
           >
             <Text style={styles.useThisButtonText}>✅ Use This</Text>
           </TouchableOpacity>
@@ -355,7 +605,7 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
           <TouchableOpacity
             style={styles.captureButton}
             onPress={handleTakePicture}
-            disabled={isProcessing}
+            disabled={isProcessing || isBarcodeProcessing}
           >
             <View style={[styles.captureInner, isProcessing && styles.captureInnerDisabled]} />
           </TouchableOpacity>
@@ -515,6 +765,17 @@ const getStyles = (theme: any) =>
       padding: 12,
       zIndex: 5,
     },
+    barcodeResultPanel: {
+      position: 'absolute',
+      top: 210,
+      left: 16,
+      right: 16,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      borderRadius: 12,
+      padding: 12,
+      zIndex: 5,
+      gap: 4,
+    },
     previewTitle: {
       color: theme.accent,
       fontSize: 12,
@@ -544,7 +805,34 @@ const getStyles = (theme: any) =>
       position: 'absolute',
       bottom: 40,
       alignSelf: 'center',
+      alignItems: 'center',
       zIndex: 5,
+      gap: 12,
+    },
+    barcodeActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+    },
+    scanAgainButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.18)',
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.35)',
+    },
+    scanAgainButtonText: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    useBarcodeButton: {
+      backgroundColor: theme.accent || theme.primary,
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.sm,
+      borderRadius: 24,
     },
     captureButton: {
       width: 70,

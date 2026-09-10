@@ -82,7 +82,8 @@ describe('Voice Input Parser', () => {
   test('parseVoiceInput should extract quantity and unit', () => {
     const result = parseVoiceInput('2 kilo ng bigas');
     expect(result.quantity).toBe(2);
-    expect(result.unit).toContain('kilo');
+    expect(result.unit).toBe('kg');
+    expect(result.name).toBe('Bigas');
   });
 
   test('parseVoiceInput should extract price', () => {

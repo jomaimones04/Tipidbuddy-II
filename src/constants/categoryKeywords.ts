@@ -75,7 +75,7 @@ export const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'sardinas', 'ligo sardines', '555 sardines', 'century tuna', 'tuna flakes', 'corned beef',
     'argentina corned beef', 'palm corned beef', 'great taste corned beef', 'spam', 'vienna sausage',
     'liver spread', 'reno liver spread', 'pork and beans', 'campbell\'s', 'hunt\'s', 'instant noodles',
-    'lucky me', 'pancit canton', 'lucky me chicken', 'nissin', 'mami', 'ramen', 'cup noodles', 'lomi',
+    'lucky me', 'pancit canton', 'lucky me chicken', 'nissin', 'mami', 'ramen', 'noodles', 'cup noodles', 'lomi',
     'instant rice', 'packaged rice', 'powdered soup', 'knorr soup', 'knorr sinigang mix', 'knorr kare-kare mix',
     'mama sita', 'mama sita\'s', 'ginataang bilo-bilo mix', 'arroz caldo mix', 'champorado mix',
     'maja blanca mix', 'palabok mix', 'bihon', 'rice noodles', 'sotanghon', 'glass noodles', 'misua',
