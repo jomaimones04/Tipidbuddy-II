@@ -2,7 +2,7 @@
   "name": "tipidbuddy-api",
   "version": "1.0.0",
   "description": "TipidBuddy barcode product lookup API",
-  "main": "src/server.js",
+  "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"

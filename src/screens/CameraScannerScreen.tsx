@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import type { BarcodeScanningResult, BarcodeType } from 'expo-camera';
@@ -14,7 +16,7 @@ import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { SPACING } from '@constants/index';
 import { useTheme } from '../hooks/useTheme';
 import { parseOCRResult } from '@utils/index';
-import { lookupProductByBarcode } from '../api/products';
+import { lookupProductByBarcode, normalizeScannedBarcode } from '../api/products';
 import type { DetectedProduct } from '../types/product';
 
 // HTML content for hidden WebView executing Tesseract.js in JS environment
@@ -220,15 +222,19 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
     barcodeType?: string | null,
     product?: DetectedProduct | null
   ) => {
+    const productName = product?.productName || product?.name || detectedName;
+    const cheapest = product?.prices?.find((row) => row.isAvailable !== false);
     navigation.navigate('AddEditItem', {
       cartId,
-      detectedName: product?.name || detectedName,
-      detectedPrice,
+      detectedName: productName,
+      detectedPrice: detectedPrice || (cheapest ? String(cheapest.price) : ''),
       detectedQuantity,
+      detectedUnit: product?.unit,
       detectedBarcode: barcodeValue || undefined,
       detectedBarcodeType: barcodeType || undefined,
       detectedBrand: product?.brand,
       detectedCategory: product?.category,
+      detectedSubcategory: product?.subcategory,
       detectedDescription: product?.description,
       detectedImageUrl: product?.imageUrl,
     });
@@ -246,8 +252,18 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       }
 
       const { type, data } = scanningResult;
-      const barcodeValue = (data || '').trim();
+      console.log('[SCAN] RAW barcode value:', JSON.stringify(data));
+      console.log('[SCAN] RAW barcode length:', String(data ?? '').length);
+      console.log('[SCAN] RAW barcode type:', type);
+      console.log('[SCAN] RAW barcode charCodes:', [...String(data ?? '')].map((ch) => ch.charCodeAt(0)).join(','));
+
+      const barcodeValue = normalizeScannedBarcode(data);
+      console.log('[SCAN] Normalized barcode:', JSON.stringify(barcodeValue));
       if (!barcodeValue) {
+        setIsBarcodeScanned(true);
+        setDetectedBarcode(null);
+        setDetectedProduct(null);
+        setBarcodeError('Unable to read barcode. Please try again.');
         return;
       }
 
@@ -259,6 +275,7 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       lastBarcodeRef.current = barcodeValue;
 
       const rawType = type.toLowerCase();
+      console.log('Barcode scanned:', barcodeValue);
       console.log('Barcode type:', type);
       console.log('Barcode data:', barcodeValue);
 
@@ -271,16 +288,25 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
 
       const result = await lookupProductByBarcode(barcodeValue, rawType);
       if (result.success && result.found && result.product) {
-        setDetectedProduct(result.product);
+        setDetectedProduct({
+          ...result.product,
+          name: result.product.productName || result.product.name,
+        });
         setBarcodeError(null);
-      } else if (result.success && !result.found) {
-        setDetectedProduct(null);
-        setBarcodeError('Product not found in database.');
-      } else {
+      } else if (
+        result.message?.includes('Unable to connect') ||
+        (result.success === false &&
+          result.message !== 'Product not found' &&
+          result.message !== 'Unable to read barcode. Please try again.')
+      ) {
         setDetectedProduct(null);
         setBarcodeError(
-          result.message || 'Unable to identify product. You can add it manually.'
+          result.message ||
+            'Unable to connect to the server. Please check your connection and try again.'
         );
+      } else {
+        setDetectedProduct(null);
+        setBarcodeError(result.message || 'Product not found.');
       }
 
       if (barcodeCooldownTimeoutRef.current) {
@@ -291,7 +317,9 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       }, BARCODE_COOLDOWN_MS);
     } catch (error) {
       console.log('Barcode scanning error:', error);
-      setBarcodeError('Unable to identify product. You can add it manually.');
+      setBarcodeError(
+        'Unable to connect to the server. Please check your connection and try again.'
+      );
       barcodeLockRef.current = false;
     } finally {
       setIsBarcodeProcessing(false);
@@ -496,11 +524,7 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
         barcodeScannerSettings={{
           barcodeTypes: SUPPORTED_BARCODE_TYPES,
         }}
-        onBarcodeScanned={
-          isBarcodeScanned || isBarcodeProcessing || isProcessing
-            ? undefined
-            : handleBarcodeScanned
-        }
+        onBarcodeScanned={handleBarcodeScanned}
         onMountError={(event) => {
           console.log('Camera mount error:', event.message);
         }}
@@ -537,26 +561,56 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
               <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
             </>
           ) : detectedProduct ? (
-            <>
+            <ScrollView style={styles.productResultScroll}>
               <Text style={styles.previewTitle}>Product Detected</Text>
-              <Text style={styles.previewValue}>☑ {detectedProduct.name}</Text>
+              {detectedProduct.imageUrl ? (
+                <Image
+                  source={{ uri: detectedProduct.imageUrl }}
+                  style={styles.productImage}
+                />
+              ) : null}
+              <Text style={styles.previewValue}>
+                ☑ {detectedProduct.productName || detectedProduct.name}
+              </Text>
               {detectedProduct.brand ? (
                 <Text style={styles.previewValue}>Brand: {detectedProduct.brand}</Text>
               ) : null}
-              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
-              <Text style={styles.previewValue}>
-                Type: {formatBarcodeType(detectedBarcodeType || '')}
-              </Text>
               {detectedProduct.category ? (
-                <Text style={styles.previewValue}>Category: {detectedProduct.category}</Text>
+                <Text style={styles.previewValue}>
+                  Category: {detectedProduct.category}
+                </Text>
               ) : null}
-            </>
+              {detectedProduct.description ? (
+                <Text style={styles.previewValue}>
+                  {detectedProduct.description}
+                </Text>
+              ) : null}
+              {detectedProduct.unit ? (
+                <Text style={styles.previewValue}>Unit: {detectedProduct.unit}</Text>
+              ) : null}
+              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+              {(detectedProduct.prices || []).slice(0, 4).map((row) => (
+                <Text key={`${row.storeName}-${row.price}`} style={styles.previewValue}>
+                  {row.storeName}: ₱{row.price}
+                  {row.stockStatus ? ` · ${row.stockStatus}` : ''}
+                  {typeof row.stock === 'number' ? ` (${row.stock})` : ''}
+                </Text>
+              ))}
+            </ScrollView>
           ) : (
             <>
-              <Text style={styles.previewTitle}>Product Not Found</Text>
-              <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+              <Text style={styles.previewTitle}>
+                {barcodeError?.includes('Unable to connect')
+                  ? 'Connection Error'
+                  : barcodeError === 'Unable to read barcode. Please try again.'
+                    ? 'Scan Failed'
+                    : 'Product not found'}
+              </Text>
+              {detectedBarcode ? (
+                <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
+              ) : null}
               <Text style={styles.statusText}>
-                {barcodeError || 'Product not found in database.'}
+                {barcodeError || 'Product not found.'}
               </Text>
             </>
           )}
@@ -586,9 +640,9 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
               <TouchableOpacity
                 style={styles.useBarcodeButton}
                 onPress={handleAddManually}
-                disabled={isProcessing}
+                disabled={isProcessing || !detectedBarcode}
               >
-                <Text style={styles.useThisButtonText}>Add Manually</Text>
+                <Text style={styles.useThisButtonText}>Add Product</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -775,6 +829,18 @@ const getStyles = (theme: any) =>
       padding: 12,
       zIndex: 5,
       gap: 4,
+      maxHeight: 260,
+    },
+    productResultScroll: {
+      maxHeight: 230,
+    },
+    productImage: {
+      width: 72,
+      height: 72,
+      borderRadius: 8,
+      marginBottom: 8,
+      alignSelf: 'center',
+      backgroundColor: '#FFFFFF',
     },
     previewTitle: {
       color: theme.accent,

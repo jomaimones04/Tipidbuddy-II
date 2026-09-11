@@ -46,6 +46,7 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
     detectedBarcodeType,
     detectedBrand,
     detectedCategory,
+    detectedSubcategory,
     detectedDescription,
     detectedImageUrl,
   } = route.params || {};
@@ -79,6 +80,10 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
 
   const [name, setName] = useState(initialName);
   const [brand, setBrand] = useState(detectedBrand || '');
+  const [subcategory, setSubcategory] = useState(detectedSubcategory || '');
+  const [description, setDescription] = useState(detectedDescription || '');
+  const [imageUrl, setImageUrl] = useState(detectedImageUrl || '');
+  const [stock, setStock] = useState('');
   const [quantity, setQuantity] = useState(initialQuantityUnit.amount);
   const [unit, setUnit] = useState(initialQuantityUnit.unit);
   const [customUnit, setCustomUnit] = useState(

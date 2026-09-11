@@ -1,0 +1,146 @@
+[
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "storeName": "Juan's Sari-Sari Store",
+    "storeType": "Sari-Sari Store",
+    "storeLocation": {
+      "city": "Quezon City",
+      "barangay": "Batasan Hills"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000002"
+    },
+    "storeName": "Maria's Mini Mart",
+    "storeType": "Mini Mart",
+    "storeLocation": {
+      "city": "Manila",
+      "barangay": "Tondo"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "storeName": "Pedro's Grocery",
+    "storeType": "Grocery",
+    "storeLocation": {
+      "city": "Pasig",
+      "barangay": "San Antonio"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "storeName": "Ana's Convenience Store",
+    "storeType": "Convenience Store",
+    "storeLocation": {
+      "city": "Makati",
+      "barangay": "Poblacion"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000005"
+    },
+    "storeName": "Mang Tony's Store",
+    "storeType": "Sari-Sari Store",
+    "storeLocation": {
+      "city": "Taguig",
+      "barangay": "Western Bicutan"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000006"
+    },
+    "storeName": "Aling Rosa's Store",
+    "storeType": "Sari-Sari Store",
+    "storeLocation": {
+      "city": "Caloocan",
+      "barangay": "Grace Park East"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "storeName": "Family Choice Grocery",
+    "storeType": "Grocery",
+    "storeLocation": {
+      "city": "Marikina",
+      "barangay": "Concepcion Uno"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "storeName": "Tipid Mart",
+    "storeType": "Grocery",
+    "storeLocation": {
+      "city": "Parañaque",
+      "barangay": "BF Homes"
+    },
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  }
+]

@@ -1,0 +1,1052 @@
+[
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000001"
+    },
+    "productName": "Sinandomeng Premium Milled Rice 1kg",
+    "category": "Rice & Grains",
+    "subcategory": "White Rice",
+    "brand": "Sinandomeng",
+    "description": "Local premium well-milled rice commonly used for everyday Filipino meals.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800011000001",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000002"
+    },
+    "productName": "Dinorado Well-Milled Rice 1kg",
+    "category": "Rice & Grains",
+    "subcategory": "White Rice",
+    "brand": "Dinorado",
+    "description": "Aromatic well-milled rice packed for household cooking.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800011000002",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000003"
+    },
+    "productName": "Quaker Instant Oatmeal 400g",
+    "category": "Rice & Grains",
+    "subcategory": "Oats",
+    "brand": "Quaker",
+    "description": "Instant oatmeal for breakfast porridge and merienda.",
+    "unit": "g",
+    "quantity": 400,
+    "barcode": "4800011000003",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000004"
+    },
+    "productName": "Argentina Corned Beef 150g",
+    "category": "Canned Goods",
+    "subcategory": "Corned Beef",
+    "brand": "Argentina",
+    "description": "Classic canned corned beef for breakfast with rice and egg.",
+    "unit": "g",
+    "quantity": 150,
+    "barcode": "4800012000004",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000005"
+    },
+    "productName": "Century Tuna Flakes in Oil 155g",
+    "category": "Canned Goods",
+    "subcategory": "Canned Tuna",
+    "brand": "Century Tuna",
+    "description": "Tuna flakes in oil for sandwiches, pasta, and ulam.",
+    "unit": "g",
+    "quantity": 155,
+    "barcode": "4800012000005",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000006"
+    },
+    "productName": "Mega Sardines in Tomato Sauce 155g",
+    "category": "Canned Goods",
+    "subcategory": "Canned Sardines",
+    "brand": "Mega",
+    "description": "Budget-friendly sardines in tomato sauce for everyday ulam.",
+    "unit": "g",
+    "quantity": 155,
+    "barcode": "4800012000006",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000007"
+    },
+    "productName": "Nestlé Cerelac Wheat with Milk 120g",
+    "category": "Baby Products",
+    "subcategory": "Infant Cereal",
+    "brand": "Nestlé",
+    "description": "Infant cereal with milk for babies starting complementary feeding.",
+    "unit": "g",
+    "quantity": 120,
+    "barcode": "4800030000007",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000008"
+    },
+    "productName": "Purefoods Tender Juicy Hotdog Classic 1kg",
+    "category": "Meat & Frozen Foods",
+    "subcategory": "Hotdogs",
+    "brand": "Purefoods",
+    "description": "Classic Filipino breakfast hotdogs sold by the kilo.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800013000008",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000009"
+    },
+    "productName": "CDO Young Pork Tocino 220g",
+    "category": "Meat & Frozen Foods",
+    "subcategory": "Tocino",
+    "brand": "CDO",
+    "description": "Sweet pork tocino for Filipino breakfast meals.",
+    "unit": "g",
+    "quantity": 220,
+    "barcode": "4800013000009",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000010"
+    },
+    "productName": "Magnolia Chicken Thigh Fillet 500g",
+    "category": "Meat & Frozen Foods",
+    "subcategory": "Chicken",
+    "brand": "Magnolia",
+    "description": "Chilled chicken thigh fillet for everyday cooking.",
+    "unit": "g",
+    "quantity": 500,
+    "barcode": "4800013000010",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000011"
+    },
+    "productName": "Fresh Bangus Whole 1kg",
+    "category": "Fish & Seafood",
+    "subcategory": "Milkfish",
+    "brand": "Local Wet Market",
+    "description": "Whole milkfish commonly bought for sinigang or fried bangus.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800014000011",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000012"
+    },
+    "productName": "Fresh Tilapia 1kg",
+    "category": "Fish & Seafood",
+    "subcategory": "Tilapia",
+    "brand": "Local Wet Market",
+    "description": "Fresh tilapia for frying or sinigang na tilapia.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800014000012",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000013"
+    },
+    "productName": "Fresh Galunggong 1kg",
+    "category": "Fish & Seafood",
+    "subcategory": "Galunggong",
+    "brand": "Local Wet Market",
+    "description": "Galunggong, a staple fried fish in Filipino households.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800014000013",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000014"
+    },
+    "productName": "Banana Lakatan 1kg",
+    "category": "Fruits & Vegetables",
+    "subcategory": "Fruits",
+    "brand": "Local Produce",
+    "description": "Sweet lakatan bananas sold by the kilo.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800015000014",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000015"
+    },
+    "productName": "Tomato 1kg",
+    "category": "Fruits & Vegetables",
+    "subcategory": "Vegetables",
+    "brand": "Local Produce",
+    "description": "Ripe tomatoes for sinigang, salads, and sawsawan.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800015000015",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000016"
+    },
+    "productName": "White Onion 1kg",
+    "category": "Fruits & Vegetables",
+    "subcategory": "Vegetables",
+    "brand": "Local Produce",
+    "description": "White onions used as a basic cooking ingredient.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800015000016",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000017"
+    },
+    "productName": "Cabbage 1kg",
+    "category": "Fruits & Vegetables",
+    "subcategory": "Vegetables",
+    "brand": "Local Produce",
+    "description": "Fresh cabbage for ginisang repolyo and soups.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800015000017",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000018"
+    },
+    "productName": "Bear Brand Sterilized Milk 150ml",
+    "category": "Dairy & Eggs",
+    "subcategory": "Milk",
+    "brand": "Bear Brand",
+    "description": "Ready-to-drink sterilized milk in a small can.",
+    "unit": "ml",
+    "quantity": 150,
+    "barcode": "4800016000018",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000019"
+    },
+    "productName": "Magnolia Fresh Milk Full Cream 1L",
+    "category": "Dairy & Eggs",
+    "subcategory": "Fresh Milk",
+    "brand": "Magnolia",
+    "description": "Full cream fresh milk in a one-liter carton.",
+    "unit": "L",
+    "quantity": 1,
+    "barcode": "4800016000019",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000020"
+    },
+    "productName": "Selecta Super Thick Vanilla Ice Cream 1.5L",
+    "category": "Dairy & Eggs",
+    "subcategory": "Ice Cream",
+    "brand": "Selecta",
+    "description": "Family-size vanilla ice cream tub for dessert and merienda.",
+    "unit": "L",
+    "quantity": 1.5,
+    "barcode": "4800016000020",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000021"
+    },
+    "productName": "Fresh Medium Chicken Egg 1pc",
+    "category": "Dairy & Eggs",
+    "subcategory": "Eggs",
+    "brand": "Local Farm",
+    "description": "Medium chicken egg sold per piece in sari-sari stores.",
+    "unit": "pc",
+    "quantity": 1,
+    "barcode": "4800016000021",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000022"
+    },
+    "productName": "Gardenia Classic White Bread 600g",
+    "category": "Bread & Bakery",
+    "subcategory": "Loaf Bread",
+    "brand": "Gardenia",
+    "description": "Soft white loaf bread for sandwiches and breakfast.",
+    "unit": "g",
+    "quantity": 600,
+    "barcode": "4800017000022",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000023"
+    },
+    "productName": "Pinoy Tasty Loaf Bread 450g",
+    "category": "Bread & Bakery",
+    "subcategory": "Loaf Bread",
+    "brand": "Pinoy Tasty",
+    "description": "Affordable tasty loaf bread commonly sold in neighborhood stores.",
+    "unit": "g",
+    "quantity": 450,
+    "barcode": "4800017000023",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000024"
+    },
+    "productName": "Coca-Cola Regular 1.5L",
+    "category": "Beverages",
+    "subcategory": "Soft Drinks",
+    "brand": "Coca-Cola",
+    "description": "Family-size cola bottle for meals and gatherings.",
+    "unit": "L",
+    "quantity": 1.5,
+    "barcode": "4800018000024",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000025"
+    },
+    "productName": "C2 Green Apple Cooler 500ml",
+    "category": "Beverages",
+    "subcategory": "Ready-to-Drink Tea",
+    "brand": "C2",
+    "description": "Apple-flavored ready-to-drink tea in a PET bottle.",
+    "unit": "ml",
+    "quantity": 500,
+    "barcode": "4800018000025",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000026"
+    },
+    "productName": "Colgate Regular Flavor Toothpaste 50ml",
+    "category": "Personal Care",
+    "subcategory": "Toothpaste",
+    "brand": "Colgate",
+    "description": "Regular-flavor family toothpaste in a travel/sari-sari size.",
+    "unit": "ml",
+    "quantity": 50,
+    "barcode": "4800029000026",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000027"
+    },
+    "productName": "Nescafé Classic Instant Coffee 50g",
+    "category": "Coffee",
+    "subcategory": "Instant Coffee",
+    "brand": "Nescafé",
+    "description": "Pure soluble coffee in a 50g bottle for home brewing.",
+    "unit": "g",
+    "quantity": 50,
+    "barcode": "4800019000027",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000028"
+    },
+    "productName": "Kopiko Brown Coffee Mix 10 sachets",
+    "category": "Coffee",
+    "subcategory": "Coffee Mix",
+    "brand": "Kopiko",
+    "description": "3-in-1 brown coffee mix pack of 10 sachets.",
+    "unit": "pack",
+    "quantity": 10,
+    "barcode": "4800019000028",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000029"
+    },
+    "productName": "Great Taste White Coffee Mix 10 sachets",
+    "category": "Coffee",
+    "subcategory": "Coffee Mix",
+    "brand": "Great Taste",
+    "description": "Creamy white coffee mix pack of 10 sachets.",
+    "unit": "pack",
+    "quantity": 10,
+    "barcode": "4800019000029",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000030"
+    },
+    "productName": "Piattos Cheese 85g",
+    "category": "Snacks",
+    "subcategory": "Potato Chips",
+    "brand": "Piattos",
+    "description": "Cheese-flavored potato crisps for merienda.",
+    "unit": "g",
+    "quantity": 85,
+    "barcode": "4800020000030",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000031"
+    },
+    "productName": "Chippy BBQ 110g",
+    "category": "Snacks",
+    "subcategory": "Corn Chips",
+    "brand": "Chippy",
+    "description": "BBQ-flavored corn chips popular with Filipino students.",
+    "unit": "g",
+    "quantity": 110,
+    "barcode": "4800020000031",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000032"
+    },
+    "productName": "SkyFlakes Crackers 10 packs",
+    "category": "Biscuits",
+    "subcategory": "Crackers",
+    "brand": "SkyFlakes",
+    "description": "Plain soda crackers in a family multipack.",
+    "unit": "pack",
+    "quantity": 10,
+    "barcode": "4800021000032",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000033"
+    },
+    "productName": "Rebisco Hansel Mocha 10 packs",
+    "category": "Biscuits",
+    "subcategory": "Sandwich Biscuits",
+    "brand": "Rebisco",
+    "description": "Mocha sandwich biscuits in a 10-pack bundle.",
+    "unit": "pack",
+    "quantity": 10,
+    "barcode": "4800021000033",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000034"
+    },
+    "productName": "Lucky Me! Pancit Canton Original 60g",
+    "category": "Instant Noodles",
+    "subcategory": "Pancit Canton",
+    "brand": "Lucky Me!",
+    "description": "Original flavor pancit canton, a Filipino pantry staple.",
+    "unit": "g",
+    "quantity": 60,
+    "barcode": "4800022000034",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000035"
+    },
+    "productName": "Lucky Me! Instant Mami Beef 55g",
+    "category": "Instant Noodles",
+    "subcategory": "Instant Mami",
+    "brand": "Lucky Me!",
+    "description": "Beef-flavor instant mami noodle soup.",
+    "unit": "g",
+    "quantity": 55,
+    "barcode": "4800022000035",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000036"
+    },
+    "productName": "Nissin Cup Noodles Seafood 60g",
+    "category": "Instant Noodles",
+    "subcategory": "Cup Noodles",
+    "brand": "Nissin",
+    "description": "Seafood cup noodles for a quick merienda.",
+    "unit": "g",
+    "quantity": 60,
+    "barcode": "4800022000036",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000037"
+    },
+    "productName": "Silver Swan Soy Sauce 1L",
+    "category": "Condiments & Sauces",
+    "subcategory": "Soy Sauce",
+    "brand": "Silver Swan",
+    "description": "All-purpose soy sauce in a one-liter bottle.",
+    "unit": "L",
+    "quantity": 1,
+    "barcode": "4800023000037",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000038"
+    },
+    "productName": "Datu Puti Cane Vinegar 1L",
+    "category": "Condiments & Sauces",
+    "subcategory": "Vinegar",
+    "brand": "Datu Puti",
+    "description": "Cane vinegar used for adobo, sawsawan, and pickling.",
+    "unit": "L",
+    "quantity": 1,
+    "barcode": "4800023000038",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000039"
+    },
+    "productName": "UFC Banana Catsup 320g",
+    "category": "Condiments & Sauces",
+    "subcategory": "Catsup",
+    "brand": "UFC",
+    "description": "Filipino-style banana catsup in a squeeze bottle.",
+    "unit": "g",
+    "quantity": 320,
+    "barcode": "4800023000039",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000040"
+    },
+    "productName": "Maggi Magic Sarap All-in-One Seasoning 8g",
+    "category": "Cooking Ingredients",
+    "subcategory": "Seasoning",
+    "brand": "Maggi",
+    "description": "Single-serve all-in-one seasoning sachet for everyday lutong bahay.",
+    "unit": "g",
+    "quantity": 8,
+    "barcode": "4800024000040",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000041"
+    },
+    "productName": "Knorr Sinigang sa Sampalok Mix 22g",
+    "category": "Cooking Ingredients",
+    "subcategory": "Soup Mix",
+    "brand": "Knorr",
+    "description": "Tamarind sinigang mix for pork, fish, or shrimp sinigang.",
+    "unit": "g",
+    "quantity": 22,
+    "barcode": "4800024000041",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000042"
+    },
+    "productName": "Minola Gold Vegetable Oil 1L",
+    "category": "Cooking Oil",
+    "subcategory": "Vegetable Oil",
+    "brand": "Minola",
+    "description": "Vegetable cooking oil in a one-liter bottle.",
+    "unit": "L",
+    "quantity": 1,
+    "barcode": "4800025000042",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000043"
+    },
+    "productName": "Baguio Pure Coconut Oil 1L",
+    "category": "Cooking Oil",
+    "subcategory": "Coconut Oil",
+    "brand": "Baguio",
+    "description": "Coconut cooking oil commonly used for frying.",
+    "unit": "L",
+    "quantity": 1,
+    "barcode": "4800025000043",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000044"
+    },
+    "productName": "Washed White Sugar 1kg",
+    "category": "Sugar & Salt",
+    "subcategory": "Sugar",
+    "brand": "Local Refinery",
+    "description": "Refined white sugar packed for household use.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800026000044",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000045"
+    },
+    "productName": "Rock Salt 1kg",
+    "category": "Sugar & Salt",
+    "subcategory": "Salt",
+    "brand": "Local",
+    "description": "Coarse rock salt for cooking and food preservation.",
+    "unit": "kg",
+    "quantity": 1,
+    "barcode": "4800026000045",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000046"
+    },
+    "productName": "Joy Dishwashing Liquid Kalamansi 192ml",
+    "category": "Household Cleaning",
+    "subcategory": "Dishwashing Liquid",
+    "brand": "Joy",
+    "description": "Kalamansi-scented dishwashing liquid for kitchen use.",
+    "unit": "ml",
+    "quantity": 192,
+    "barcode": "4800027000046",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000047"
+    },
+    "productName": "Zonrox Bleach Original 500ml",
+    "category": "Household Cleaning",
+    "subcategory": "Bleach",
+    "brand": "Zonrox",
+    "description": "Original bleach for laundry and household cleaning.",
+    "unit": "ml",
+    "quantity": 500,
+    "barcode": "4800027000047",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000048"
+    },
+    "productName": "Surf Powder Cherry Blossom 65g",
+    "category": "Laundry",
+    "subcategory": "Laundry Powder",
+    "brand": "Surf",
+    "description": "Single-wash laundry powder sachet popular in sari-sari stores.",
+    "unit": "g",
+    "quantity": 65,
+    "barcode": "4800028000048",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000049"
+    },
+    "productName": "Ariel Powder Original Scent 65g",
+    "category": "Laundry",
+    "subcategory": "Laundry Powder",
+    "brand": "Ariel",
+    "description": "Compact laundry powder sachet for one load of clothes.",
+    "unit": "g",
+    "quantity": 65,
+    "barcode": "4800028000049",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2b2000000000000000050"
+    },
+    "productName": "Safeguard Pure White Bar Soap 135g",
+    "category": "Personal Care",
+    "subcategory": "Bath Soap",
+    "brand": "Safeguard",
+    "description": "Antibacterial white bath soap for family use.",
+    "unit": "g",
+    "quantity": 135,
+    "barcode": "4800029000050",
+    "imageUrl": "",
+    "isActive": true,
+    "createdAt": {
+      "$date": "2026-06-15T08:00:00.000Z"
+    },
+    "updatedAt": {
+      "$date": "2026-09-10T10:30:00.000Z"
+    }
+  }
+]

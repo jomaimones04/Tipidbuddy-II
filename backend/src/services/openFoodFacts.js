@@ -59,12 +59,33 @@ const fetchOpenFoodFactsProduct = async (barcode, barcodeType) => {
     }
 
     const data = await response.json();
+    console.log('[OFF] HTTP status:', response.status);
+    console.log('[OFF] RAW top-level keys:', data && typeof data === 'object' ? Object.keys(data) : data);
+    console.log('[OFF] RAW status:', data?.status);
+    console.log('[OFF] RAW status_verbose:', data?.status_verbose);
+    console.log('[OFF] RAW code:', data?.code);
+    console.log(
+      '[OFF] RAW product summary:',
+      data?.product
+        ? {
+            product_name: data.product.product_name,
+            product_name_en: data.product.product_name_en,
+            brands: data.product.brands,
+            code: data.product.code,
+          }
+        : null
+    );
+
     if (!data || data.status !== 1 || !data.product) {
+      console.log('[OFF] Treating as not found because status !== 1 or product missing');
       return null;
     }
 
     return normalizeOpenFoodFactsProduct(data.product, barcode, barcodeType);
   } catch (error) {
+    console.error('[OFF] fetch error.message:', error.message);
+    console.error('[OFF] fetch error.name:', error.name);
+    console.error('[OFF] fetch error.response?.status:', error.response?.status);
     if (error.name === 'AbortError') {
       const timeoutError = new Error('Open Food Facts timed out');
       timeoutError.code = 'OFF_UNAVAILABLE';

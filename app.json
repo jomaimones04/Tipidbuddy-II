@@ -16,7 +16,9 @@
         "backgroundColor": "#2D7D46"
       },
       "package": "com.tipidbuddy.app",
+      "usesCleartextTraffic": true,
       "permissions": [
+        "android.permission.INTERNET",
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
@@ -43,9 +45,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "04cdf2e4-1d14-47a3-af0e-c06da60fa166"
+        "projectId": "5fa463bd-1d20-48d8-867c-10444fd2589d"
       }
     },
-    "owner": "m4eca"
+    "owner": "yohjhay"
   }
 }

@@ -114,8 +114,10 @@ export type RootStackParamList = {
     detectedBarcodeType?: string;
     detectedBrand?: string;
     detectedCategory?: string;
+    detectedSubcategory?: string;
     detectedDescription?: string;
     detectedImageUrl?: string;
+    detectedStock?: string;
   };
   VoiceInput: { cartId: string };
   CameraScanner: { cartId: string };

@@ -5,7 +5,6 @@ const productSchema = new mongoose.Schema(
     barcode: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       index: true,
     },
@@ -13,9 +12,14 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    productName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     name: {
       type: String,
-      required: true,
+      default: '',
       trim: true,
     },
     brand: {
@@ -28,14 +32,32 @@ const productSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    subcategory: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     description: {
       type: String,
       default: '',
       trim: true,
     },
+    unit: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+    },
     imageUrl: {
       type: String,
       default: '',
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
     source: {
       type: String,
@@ -43,7 +65,13 @@ const productSchema = new mongoose.Schema(
       default: 'manual',
     },
   },
-  { timestamps: true }
+  { timestamps: true, collection: 'products' }
 );
+
+productSchema.pre('validate', function setDisplayName() {
+  const displayName = (this.productName || this.name || '').trim();
+  this.productName = displayName;
+  this.name = displayName;
+});
 
 module.exports = mongoose.model('Product', productSchema);

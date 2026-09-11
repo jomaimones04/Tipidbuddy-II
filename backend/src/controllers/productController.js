@@ -1,5 +1,6 @@
+const { isDatabaseConnected } = require('../config/db');
 const {
-  isValidBarcode,
+  normalizeBarcode,
   lookupProductByBarcode,
   saveManualProduct,
   saveStorePrice,
@@ -7,36 +8,61 @@ const {
 
 const lookupByBarcode = async (req, res) => {
   try {
-    const barcode = String(req.params.barcode || '').trim();
-    const barcodeType = String(req.query.barcodeType || '').trim();
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        success: false,
+        found: false,
+        message: 'Unable to connect to the product database.',
+      });
+    }
 
-    if (!isValidBarcode(barcode)) {
+    const rawParam = req.params.barcode || req.body?.barcode;
+    console.log('[LOOKUP] RAW req.params.barcode:', JSON.stringify(req.params.barcode));
+    console.log('[LOOKUP] RAW req.body.barcode:', JSON.stringify(req.body?.barcode));
+    console.log('[LOOKUP] RAW query barcodeType:', JSON.stringify(req.query.barcodeType));
+
+    const barcode = normalizeBarcode(rawParam);
+    const barcodeType = String(req.query.barcodeType || req.body?.barcodeType || '').trim();
+    console.log('[LOOKUP] Normalized barcode received:', JSON.stringify(barcode));
+
+    if (!barcode) {
       return res.status(400).json({
         success: false,
-        message: 'Unable to identify product',
+        found: false,
+        message: 'Unable to read barcode. Please try again.',
       });
     }
 
     const result = await lookupProductByBarcode(barcode, barcodeType);
-    return res.status(result.success ? 200 : 503).json(result);
+    console.log('Product found:', result.product || null);
+    const status = result.found ? 200 : result.message === 'Product not found' ? 200 : 400;
+    return res.status(status).json(result);
   } catch (error) {
     console.error('Barcode lookup error:', error);
-    return res.status(500).json({
+    return res.status(503).json({
       success: false,
-      message: 'Unable to identify product',
+      found: false,
+      message: 'Unable to connect to the product database.',
     });
   }
 };
 
 const createManualProduct = async (req, res) => {
   try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Unable to connect to the product database.',
+      });
+    }
+
     const result = await saveManualProduct(req.body || {});
     return res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     console.error('Manual product save error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Unable to identify product',
+      message: 'Unable to connect to the product database.',
     });
   }
 };

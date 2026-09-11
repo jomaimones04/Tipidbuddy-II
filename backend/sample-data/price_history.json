@@ -1,0 +1,1082 @@
+[
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000001"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000001"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 70,
+    "newPrice": 64,
+    "priceChange": -6,
+    "priceChangePercentage": -8.57,
+    "changedAt": {
+      "$date": "2026-08-12T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000002"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000001"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 69,
+    "newPrice": 67,
+    "priceChange": -2,
+    "priceChangePercentage": -2.9,
+    "changedAt": {
+      "$date": "2026-08-20T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000003"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000001"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 66,
+    "newPrice": 65,
+    "priceChange": -1,
+    "priceChangePercentage": -1.52,
+    "changedAt": {
+      "$date": "2026-09-01T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000004"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000002"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 60,
+    "newPrice": 58,
+    "priceChange": -2,
+    "priceChangePercentage": -3.33,
+    "changedAt": {
+      "$date": "2026-07-18T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000005"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000002"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 64,
+    "newPrice": 66,
+    "priceChange": 2,
+    "priceChangePercentage": 3.13,
+    "changedAt": {
+      "$date": "2026-08-05T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000006"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000004"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 45,
+    "newPrice": 40,
+    "priceChange": -5,
+    "priceChangePercentage": -11.11,
+    "changedAt": {
+      "$date": "2026-08-14T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000007"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000004"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 46,
+    "newPrice": 47,
+    "priceChange": 1,
+    "priceChangePercentage": 2.17,
+    "changedAt": {
+      "$date": "2026-09-02T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000008"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000005"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 46,
+    "newPrice": 42,
+    "priceChange": -4,
+    "priceChangePercentage": -8.7,
+    "changedAt": {
+      "$date": "2026-08-22T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000009"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000005"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 45,
+    "newPrice": 47,
+    "priceChange": 2,
+    "priceChangePercentage": 4.44,
+    "changedAt": {
+      "$date": "2026-09-04T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000010"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000006"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 28,
+    "newPrice": 24,
+    "priceChange": -4,
+    "priceChangePercentage": -14.29,
+    "changedAt": {
+      "$date": "2026-07-30T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000011"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000006"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 27,
+    "newPrice": 29,
+    "priceChange": 2,
+    "priceChangePercentage": 7.41,
+    "changedAt": {
+      "$date": "2026-08-28T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000012"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000008"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 195,
+    "newPrice": 184,
+    "priceChange": -11,
+    "priceChangePercentage": -5.64,
+    "changedAt": {
+      "$date": "2026-08-10T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000013"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000008"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 182,
+    "newPrice": 177,
+    "priceChange": -5,
+    "priceChangePercentage": -2.75,
+    "changedAt": {
+      "$date": "2026-09-03T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000014"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000011"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 198,
+    "newPrice": 193,
+    "priceChange": -5,
+    "priceChangePercentage": -2.53,
+    "changedAt": {
+      "$date": "2026-08-16T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000015"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000011"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 210,
+    "newPrice": 201,
+    "priceChange": -9,
+    "priceChangePercentage": -4.29,
+    "changedAt": {
+      "$date": "2026-09-05T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000016"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000014"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 88,
+    "newPrice": 79,
+    "priceChange": -9,
+    "priceChangePercentage": -10.23,
+    "changedAt": {
+      "$date": "2026-08-01T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000017"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000015"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 105,
+    "newPrice": 89,
+    "priceChange": -16,
+    "priceChangePercentage": -15.24,
+    "changedAt": {
+      "$date": "2026-08-18T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000018"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000016"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 95,
+    "newPrice": 108,
+    "priceChange": 13,
+    "priceChangePercentage": 13.68,
+    "changedAt": {
+      "$date": "2026-08-25T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000019"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000018"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 22,
+    "newPrice": 20,
+    "priceChange": -2,
+    "priceChangePercentage": -9.09,
+    "changedAt": {
+      "$date": "2026-07-22T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000020"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000018"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 20,
+    "newPrice": 22,
+    "priceChange": 2,
+    "priceChangePercentage": 10,
+    "changedAt": {
+      "$date": "2026-08-30T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000021"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000019"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 112,
+    "newPrice": 102,
+    "priceChange": -10,
+    "priceChangePercentage": -8.93,
+    "changedAt": {
+      "$date": "2026-08-09T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000022"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000020"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 255,
+    "newPrice": 235,
+    "priceChange": -20,
+    "priceChangePercentage": -7.84,
+    "changedAt": {
+      "$date": "2026-08-21T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000023"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000021"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 11,
+    "newPrice": 9,
+    "priceChange": -2,
+    "priceChangePercentage": -18.18,
+    "changedAt": {
+      "$date": "2026-07-15T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000024"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000021"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 10,
+    "newPrice": 11,
+    "priceChange": 1,
+    "priceChangePercentage": 10,
+    "changedAt": {
+      "$date": "2026-09-06T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000025"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000022"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 76,
+    "newPrice": 77,
+    "priceChange": 1,
+    "priceChangePercentage": 1.32,
+    "changedAt": {
+      "$date": "2026-08-27T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000026"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000024"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 60,
+    "newPrice": 55,
+    "priceChange": -5,
+    "priceChangePercentage": -8.33,
+    "changedAt": {
+      "$date": "2026-08-11T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000027"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000024"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 62,
+    "newPrice": 64,
+    "priceChange": 2,
+    "priceChangePercentage": 3.23,
+    "changedAt": {
+      "$date": "2026-09-01T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000028"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000025"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 28,
+    "newPrice": 25,
+    "priceChange": -3,
+    "priceChangePercentage": -10.71,
+    "changedAt": {
+      "$date": "2026-08-19T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000029"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000027"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 102,
+    "newPrice": 90,
+    "priceChange": -12,
+    "priceChangePercentage": -11.76,
+    "changedAt": {
+      "$date": "2026-08-08T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000030"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000027"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 99,
+    "newPrice": 106,
+    "priceChange": 7,
+    "priceChangePercentage": 7.07,
+    "changedAt": {
+      "$date": "2026-09-07T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000031"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000028"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 55,
+    "newPrice": 63,
+    "priceChange": 8,
+    "priceChangePercentage": 14.55,
+    "changedAt": {
+      "$date": "2026-08-13T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000032"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000028"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 58,
+    "newPrice": 55,
+    "priceChange": -3,
+    "priceChangePercentage": -5.17,
+    "changedAt": {
+      "$date": "2026-09-02T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000033"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000030"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 45,
+    "newPrice": 39,
+    "priceChange": -6,
+    "priceChangePercentage": -13.33,
+    "changedAt": {
+      "$date": "2026-08-17T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000034"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000031"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 30,
+    "newPrice": 31,
+    "priceChange": 1,
+    "priceChangePercentage": 3.33,
+    "changedAt": {
+      "$date": "2026-09-04T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000035"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000032"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 82,
+    "newPrice": 76,
+    "priceChange": -6,
+    "priceChangePercentage": -7.32,
+    "changedAt": {
+      "$date": "2026-08-23T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000036"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000034"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 18,
+    "newPrice": 15,
+    "priceChange": -3,
+    "priceChangePercentage": -16.67,
+    "changedAt": {
+      "$date": "2026-07-28T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000037"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000034"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 16,
+    "newPrice": 18,
+    "priceChange": 2,
+    "priceChangePercentage": 12.5,
+    "changedAt": {
+      "$date": "2026-08-29T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000038"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000034"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 15,
+    "newPrice": 17,
+    "priceChange": 2,
+    "priceChangePercentage": 13.33,
+    "changedAt": {
+      "$date": "2026-09-08T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000039"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000035"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 15,
+    "newPrice": 13,
+    "priceChange": -2,
+    "priceChangePercentage": -13.33,
+    "changedAt": {
+      "$date": "2026-08-06T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000040"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000036"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 35,
+    "newPrice": 31,
+    "priceChange": -4,
+    "priceChangePercentage": -11.43,
+    "changedAt": {
+      "$date": "2026-08-24T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000041"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000037"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 48,
+    "newPrice": 41,
+    "priceChange": -7,
+    "priceChangePercentage": -14.58,
+    "changedAt": {
+      "$date": "2026-08-15T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000042"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000038"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 32,
+    "newPrice": 33,
+    "priceChange": 1,
+    "priceChangePercentage": 3.13,
+    "changedAt": {
+      "$date": "2026-09-03T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000043"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000039"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 39,
+    "newPrice": 34,
+    "priceChange": -5,
+    "priceChangePercentage": -12.82,
+    "changedAt": {
+      "$date": "2026-08-07T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000044"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000040"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 7,
+    "newPrice": 9,
+    "priceChange": 2,
+    "priceChangePercentage": 28.57,
+    "changedAt": {
+      "$date": "2026-08-26T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000045"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000041"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 20,
+    "newPrice": 17,
+    "priceChange": -3,
+    "priceChangePercentage": -15,
+    "changedAt": {
+      "$date": "2026-08-04T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000046"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000042"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 132,
+    "newPrice": 111,
+    "priceChange": -21,
+    "priceChangePercentage": -15.91,
+    "changedAt": {
+      "$date": "2026-07-25T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000047"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000042"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000001"
+    },
+    "previousPrice": 118,
+    "newPrice": 126,
+    "priceChange": 8,
+    "priceChangePercentage": 6.78,
+    "changedAt": {
+      "$date": "2026-09-01T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000048"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000044"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 78,
+    "newPrice": 69,
+    "priceChange": -9,
+    "priceChangePercentage": -11.54,
+    "changedAt": {
+      "$date": "2026-08-12T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000049"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000046"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 41,
+    "newPrice": 36,
+    "priceChange": -5,
+    "priceChangePercentage": -12.2,
+    "changedAt": {
+      "$date": "2026-08-20T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000050"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000048"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 8,
+    "newPrice": 10,
+    "priceChange": 2,
+    "priceChangePercentage": 25,
+    "changedAt": {
+      "$date": "2026-08-31T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000051"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000049"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 13,
+    "newPrice": 11,
+    "priceChange": -2,
+    "priceChangePercentage": -15.38,
+    "changedAt": {
+      "$date": "2026-08-18T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000052"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000050"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 49,
+    "newPrice": 44,
+    "priceChange": -5,
+    "priceChangePercentage": -10.2,
+    "changedAt": {
+      "$date": "2026-08-22T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000053"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000050"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000004"
+    },
+    "previousPrice": 48,
+    "newPrice": 51,
+    "priceChange": 3,
+    "priceChangePercentage": 6.25,
+    "changedAt": {
+      "$date": "2026-09-06T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000054"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000009"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 99,
+    "newPrice": 90,
+    "priceChange": -9,
+    "priceChangePercentage": -9.09,
+    "changedAt": {
+      "$date": "2026-08-14T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000055"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000010"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000003"
+    },
+    "previousPrice": 128,
+    "newPrice": 132,
+    "priceChange": 4,
+    "priceChangePercentage": 3.13,
+    "changedAt": {
+      "$date": "2026-09-05T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000056"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000012"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 155,
+    "newPrice": 139,
+    "priceChange": -16,
+    "priceChangePercentage": -10.32,
+    "changedAt": {
+      "$date": "2026-08-09T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000057"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000023"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000006"
+    },
+    "previousPrice": 55,
+    "newPrice": 60,
+    "priceChange": 5,
+    "priceChangePercentage": 9.09,
+    "changedAt": {
+      "$date": "2026-08-28T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000058"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000029"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 56,
+    "newPrice": 51,
+    "priceChange": -5,
+    "priceChangePercentage": -8.93,
+    "changedAt": {
+      "$date": "2026-08-16T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000059"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000043"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000007"
+    },
+    "previousPrice": 135,
+    "newPrice": 123,
+    "priceChange": -12,
+    "priceChangePercentage": -8.89,
+    "changedAt": {
+      "$date": "2026-08-11T09:00:00.000Z"
+    }
+  },
+  {
+    "_id": {
+      "$oid": "68c2d4000000000000000060"
+    },
+    "productId": {
+      "$oid": "68c2b2000000000000000047"
+    },
+    "storeId": {
+      "$oid": "68c2a1000000000000000008"
+    },
+    "previousPrice": 45,
+    "newPrice": 39,
+    "priceChange": -6,
+    "priceChangePercentage": -13.33,
+    "changedAt": {
+      "$date": "2026-08-19T09:00:00.000Z"
+    }
+  }
+]

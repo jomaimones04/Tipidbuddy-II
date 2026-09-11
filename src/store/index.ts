@@ -21,6 +21,25 @@ import {
   getMostRecentPurchase,
   getStoreStatsBreakdown,
 } from '../utils/storeBreakdown';
+import {
+  loadRemoteCarts,
+  loadRemoteCategories,
+  loadRemotePurchases,
+  loadRemoteSettings,
+  loadRemoteStores,
+  loadRemoteTemplates,
+  removeRemoteCart,
+  removeRemoteCategory,
+  removeRemoteStore,
+  removeRemoteTemplate,
+  syncCart,
+  syncCategory,
+  syncPurchases,
+  syncSettings,
+  syncStore,
+  syncTemplate,
+} from '../api/sync';
+import { getHealth } from '../api/client';
 
 
 interface GroceryStore {
@@ -108,6 +127,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const carts = [...get().carts, cart];
       await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(carts));
       set({ carts });
+      syncCart(cart);
       if (cart.storeId) {
         await get().addRecentStore(cart.storeId);
       }
@@ -121,6 +141,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const carts = get().carts.map((c) => (c.id === cart.id ? cart : c));
       await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(carts));
       set({ carts });
+      syncCart(cart);
       if (cart.storeId) {
         await get().addRecentStore(cart.storeId);
       }
@@ -134,6 +155,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const carts = get().carts.filter((c) => c.id !== cartId);
       await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(carts));
       set({ carts });
+      removeRemoteCart(cartId);
     } catch (error) {
       console.error('Error deleting cart:', error);
     }
@@ -157,6 +179,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const stores = [...existing, store];
       await AsyncStorage.setItem(STORAGE_KEYS.STORES, JSON.stringify(stores));
       set({ stores });
+      syncStore(store);
     } catch (error) {
       console.error('Error adding store:', error);
     }
@@ -167,6 +190,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const stores = get().stores.map((s) => (s.id === store.id ? store : s));
       await AsyncStorage.setItem(STORAGE_KEYS.STORES, JSON.stringify(stores));
       set({ stores });
+      syncStore(store);
     } catch (error) {
       console.error('Error updating store:', error);
     }
@@ -187,6 +211,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         JSON.stringify(recentStoreIds)
       );
       set({ carts, recentStoreIds });
+      removeRemoteStore(storeId);
     } catch (error) {
       console.error('Error deleting store:', error);
     }
@@ -222,6 +247,10 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       );
       await AsyncStorage.setItem(STORAGE_KEYS.STORES, JSON.stringify(stores));
       set({ stores });
+      const updated = stores.find((s) => s.id === storeId);
+      if (updated) {
+        syncStore(updated);
+      }
       await get().addRecentStore(storeId);
     } catch (error) {
       console.error('Error updating store lastUsedAt:', error);
@@ -287,6 +316,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const templates = [...get().templates, template];
       await AsyncStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates));
       set({ templates });
+      syncTemplate(template);
     } catch (error) {
       console.error('Error adding template:', error);
     }
@@ -297,6 +327,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const templates = get().templates.map((t) => (t.id === template.id ? template : t));
       await AsyncStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates));
       set({ templates });
+      syncTemplate(template);
     } catch (error) {
       console.error('Error updating template:', error);
     }
@@ -307,6 +338,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const templates = get().templates.filter((t) => t.id !== templateId);
       await AsyncStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(templates));
       set({ templates });
+      removeRemoteTemplate(templateId);
     } catch (error) {
       console.error('Error deleting template:', error);
     }
@@ -331,6 +363,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const categories = [...get().categories, category];
       await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
       set({ categories });
+      syncCategory(category);
     } catch (error) {
       console.error('Error adding category:', error);
     }
@@ -341,6 +374,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const categories = get().categories.map((c) => (c.id === category.id ? category : c));
       await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
       set({ categories });
+      syncCategory(category);
     } catch (error) {
       console.error('Error updating category:', error);
     }
@@ -351,6 +385,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const categories = get().categories.filter((c) => c.id !== categoryId);
       await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
       set({ categories });
+      removeRemoteCategory(categoryId);
     } catch (error) {
       console.error('Error deleting category:', error);
     }
@@ -436,6 +471,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const newSettings = { ...get().settings, ...settings };
       await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
       set({ settings: newSettings });
+      syncSettings(newSettings);
     } catch (error) {
       console.error('Error updating settings:', error);
     }
@@ -459,6 +495,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const json = await AsyncStorage.getItem(STORAGE_KEYS.ITEM_PRICE_HISTORY);
       const itemPriceHistory: ItemPriceHistoryMap = json ? JSON.parse(json) : {};
       set({ itemPriceHistory });
+      syncPurchases(itemPriceHistory);
     } catch (error) {
       console.error('Error loading item price history:', error);
     }
@@ -484,6 +521,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         JSON.stringify(itemPriceHistory)
       );
       set({ itemPriceHistory });
+      syncPurchases(itemPriceHistory);
     } catch (error) {
       console.error('Error adding price record:', error);
     }
@@ -543,6 +581,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         JSON.stringify(itemPriceHistory)
       );
       set({ itemPriceHistory });
+      syncPurchases(itemPriceHistory);
     }
   },
 
@@ -600,6 +639,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         JSON.stringify(itemPriceHistory)
       );
       set({ itemPriceHistory });
+      syncPurchases(itemPriceHistory);
     }
   },
 
@@ -619,6 +659,65 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       await get().buildRecentStoresFromCarts();
       await get().rebuildItemPriceHistoryFromCompletedCarts();
       await get().mergeItemPriceHistoryFromCompletedCarts();
+
+      const health = await getHealth();
+      if (health?.success && health.database === 'connected') {
+        const [remoteCarts, remoteStores, remoteTemplates, remoteCategories, remoteSettings, remotePurchases] =
+          await Promise.all([
+            loadRemoteCarts(),
+            loadRemoteStores(),
+            loadRemoteTemplates(),
+            loadRemoteCategories(),
+            loadRemoteSettings(),
+            loadRemotePurchases(),
+          ]);
+
+        if (remoteCarts?.data?.length) {
+          await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(remoteCarts.data));
+          set({ carts: remoteCarts.data });
+        } else {
+          get().carts.forEach(syncCart);
+        }
+
+        if (remoteStores?.data?.length) {
+          await AsyncStorage.setItem(STORAGE_KEYS.STORES, JSON.stringify(remoteStores.data));
+          set({ stores: remoteStores.data });
+        } else {
+          get().stores.forEach(syncStore);
+        }
+
+        if (remoteTemplates?.data?.length) {
+          await AsyncStorage.setItem(STORAGE_KEYS.TEMPLATES, JSON.stringify(remoteTemplates.data));
+          set({ templates: remoteTemplates.data });
+        } else {
+          get().templates.forEach(syncTemplate);
+        }
+
+        if (remoteCategories?.data?.length) {
+          await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(remoteCategories.data));
+          set({ categories: remoteCategories.data });
+        } else {
+          get().categories.forEach(syncCategory);
+        }
+
+        if (remoteSettings?.data) {
+          const settings = { ...get().settings, ...remoteSettings.data };
+          await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+          set({ settings });
+        } else {
+          syncSettings(get().settings);
+        }
+
+        if (remotePurchases?.data && Object.keys(remotePurchases.data).length > 0) {
+          await AsyncStorage.setItem(
+            STORAGE_KEYS.ITEM_PRICE_HISTORY,
+            JSON.stringify(remotePurchases.data)
+          );
+          set({ itemPriceHistory: remotePurchases.data });
+        } else {
+          syncPurchases(get().itemPriceHistory);
+        }
+      }
     } catch (error) {
       console.error('Error initializing store:', error);
     } finally {

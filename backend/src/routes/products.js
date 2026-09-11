@@ -8,6 +8,7 @@ const {
 const router = express.Router();
 
 router.get('/barcode/:barcode', lookupByBarcode);
+router.post('/lookup', lookupByBarcode);
 router.post('/', createManualProduct);
 router.post('/store-prices', createStorePrice);
 
