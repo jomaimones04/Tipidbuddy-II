@@ -58,12 +58,35 @@ const createCrudRouter = (Model, idField = 'id') => {
   });
 
   router.put('/:id', async (req, res) => {
+    const isCart = Model.modelName === 'Cart';
+    if (isCart) {
+      console.log('[CompleteTrip] Request received');
+      console.log('[Backend] Cart ID:', req.params.id);
+      console.log('[Backend] Items:', Array.isArray(req.body?.items) ? req.body.items.length : 'unknown');
+      console.log('[Backend] Total:', req.body?.totalSpent ?? 'unknown');
+      console.log('[CompleteTrip] Updating MongoDB');
+    }
     try {
       const saved = await Model.findOneAndUpdate(
         { [idField]: req.params.id },
         { ...req.body, [idField]: req.params.id },
         { new: true, upsert: true, setDefaultsOnInsert: true }
       );
+      if (isCart) {
+        console.log('[CompleteTrip] MongoDB update successful');
+        console.log(
+          '[Mongo] Cart saved',
+          saved.id,
+          'isCompleted=',
+          saved.isCompleted,
+          'items=',
+          saved.items?.length,
+          'totalSpent=',
+          saved.totalSpent,
+          'completedAt=',
+          saved.completedAt
+        );
+      }
       res.json({ success: true, data: stripMongo(saved) });
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -126,6 +149,7 @@ purchasesRouter.put('/', async (req, res) => {
   try {
     const map = req.body || {};
     const keys = Object.keys(map);
+    console.log('[Mongo] itempricehistories upsert keys=', keys.length);
     await Promise.all(
       keys.map((key) =>
         ItemPriceHistory.findOneAndUpdate(

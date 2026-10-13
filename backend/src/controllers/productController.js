@@ -35,8 +35,7 @@ const lookupByBarcode = async (req, res) => {
 
     const result = await lookupProductByBarcode(barcode, barcodeType);
     console.log('Product found:', result.product || null);
-    const status = result.found ? 200 : result.message === 'Product not found' ? 200 : 400;
-    return res.status(status).json(result);
+    return res.status(200).json(result);
   } catch (error) {
     console.error('Barcode lookup error:', error);
     return res.status(503).json({

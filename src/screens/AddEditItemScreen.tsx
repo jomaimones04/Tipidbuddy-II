@@ -279,6 +279,8 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
             category: selectedCategory,
             categoryColor: selectedCategoryObj?.color || item.categoryColor,
             lastUpdated: new Date().toISOString(),
+            barcode: detectedBarcode || item.barcode,
+            barcodeType: detectedBarcodeType || item.barcodeType,
           }
           : item
       );
@@ -294,6 +296,8 @@ export const AddEditItemScreen = ({ route, navigation }: any) => {
         isChecked: false,
         category: selectedCategory,
         categoryColor: selectedCategoryObj?.color || '#84CC16',
+        barcode: detectedBarcode || undefined,
+        barcodeType: detectedBarcodeType || undefined,
         priceHistory: [],
         lastUpdated: new Date().toISOString(),
       };

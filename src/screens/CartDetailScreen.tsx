@@ -13,8 +13,9 @@ import { useGroceryStore } from '@store/index';
 import { COLORS, SPACING, DEFAULT_CATEGORIES } from '@constants/index';
 import { formatPesoAmount } from '@utils/index';
 import * as Haptics from 'expo-haptics';
-import { SelectStoreSheet } from '@components/SelectStoreSheet';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SelectStoreSheet } from '@components/SelectStoreSheet';
+import { persistCompletedCart, persistPurchaseHistory } from '../api/sync';
 
 export const CartDetailScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
@@ -141,31 +142,62 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         onPress: async () => {
           const purchasedAt = new Date().toISOString();
           const storeName = getStoreName(cart.storeId);
+          const tripTotal = cart.items.reduce(
+            (sum, item) =>
+              sum + (item.actualPrice || item.estimatedPrice) * item.quantity,
+            0
+          );
+
+          const updatedCart = {
+            ...cart,
+            totalSpent: tripTotal,
+            isCompleted: true,
+            completedAt: purchasedAt,
+          };
+
+          console.log(
+            '[CompleteTrip] saving cart',
+            updatedCart.id,
+            'items',
+            updatedCart.items.length,
+            'total',
+            tripTotal
+          );
+          console.log('[CompleteTrip] Sending request...');
+
+          const savedRemote = await persistCompletedCart(updatedCart);
+          if (!savedRemote) {
+            console.log('[CompleteTrip] Mongo cart save failed; keeping active cart');
+            console.log('[CompleteTrip] Database save failed');
+            console.log('[CompleteTrip] Keeping active cart');
+            Alert.alert(
+              'Could not save trip',
+              'The trip was not saved to the database. Check that the backend is running and try Complete Trip again. Your cart was not cleared.'
+            );
+            return;
+          }
+          console.log('[CompleteTrip] Database save successful');
 
           for (const item of cart.items) {
-            await addPriceRecord(
-              item.name,
-              item.category,
-              item.categoryColor,
-              {
-                storeId: cart.storeId || 'local',
-                storeName,
-                price: item.actualPrice || item.estimatedPrice,
-                date: purchasedAt,
-              }
-            );
+            await addPriceRecord(item.name, item.category, item.categoryColor, {
+              storeId: cart.storeId || 'local',
+              storeName,
+              price: item.actualPrice || item.estimatedPrice,
+              date: purchasedAt,
+            });
+          }
+
+          const purchaseMap = useGroceryStore.getState().itemPriceHistory;
+          const savedPurchases = await persistPurchaseHistory(purchaseMap);
+          if (!savedPurchases) {
+            console.log('[CompleteTrip] Mongo price history save failed after cart save');
           }
 
           if (cart.storeId) {
             await addRecentStore(cart.storeId);
           }
 
-          const updatedCart = {
-            ...cart,
-            totalSpent: spent,
-            isCompleted: true,
-            completedAt: purchasedAt,
-          };
+          console.log('[CompleteTrip] Clearing active cart');
           await updateCart(updatedCart);
           await Haptics.notificationAsync(
             Haptics.NotificationFeedbackType.Success

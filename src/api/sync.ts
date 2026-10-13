@@ -1,7 +1,17 @@
 import type { Cart, Store, CartTemplate, Category, AppSettings, ItemPriceHistoryMap } from '../types/index';
-import { deleteItem, fetchList, putJson, upsertItem } from './client';
+import {
+  deleteItem,
+  fetchList,
+  persistCartRemote,
+  persistPurchasesRemote,
+  putJson,
+  upsertItem,
+} from './client';
 
 export const syncCart = (cart: Cart) => void upsertItem('/api/grocery-lists', cart);
+export const persistCompletedCart = (cart: Cart) => persistCartRemote(cart);
+export const persistPurchaseHistory = (map: ItemPriceHistoryMap) =>
+  persistPurchasesRemote(map);
 export const removeRemoteCart = (cartId: string) => void deleteItem('/api/grocery-lists', cartId);
 export const loadRemoteCarts = () => fetchList<Cart[]>('/api/grocery-lists');
 

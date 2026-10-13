@@ -10,6 +10,15 @@ const firstValue = (...values) => {
   return '';
 };
 
+const formatGroceryName = (name, brand) => {
+  const productName = (name || '').trim();
+  const brandName = (brand || '').trim();
+  if (brandName && productName && !productName.toLowerCase().includes(brandName.toLowerCase())) {
+    return `${brandName} ${productName}`;
+  }
+  return productName || brandName;
+};
+
 const firstCategory = (categories) => {
   if (!categories || typeof categories !== 'string') {
     return '';
@@ -18,18 +27,17 @@ const firstCategory = (categories) => {
 };
 
 const normalizeOpenFoodFactsProduct = (product, barcode, barcodeType) => {
-  const name = firstValue(
-    product.product_name,
-    product.product_name_en,
-    product.generic_name,
-    'Unknown Product'
+  const brand = firstValue(product.brands);
+  const name = formatGroceryName(
+    firstValue(product.product_name, product.product_name_en, product.generic_name),
+    brand
   );
 
   return {
     barcode: firstValue(product.code, barcode),
     barcodeType: barcodeType || '',
     name,
-    brand: firstValue(product.brands),
+    brand,
     category: firstCategory(product.categories),
     description: firstValue(product.generic_name, product.product_name),
     imageUrl: firstValue(product.image_url, product.image_front_url),
@@ -37,7 +45,29 @@ const normalizeOpenFoodFactsProduct = (product, barcode, barcodeType) => {
   };
 };
 
+const barcodeCandidates = (barcode) => {
+  const clean = String(barcode || '').trim();
+  const values = [clean];
+  if (/^\d{12}$/.test(clean)) values.push(`0${clean}`);
+  if (/^\d{13}$/.test(clean) && clean.startsWith('0')) values.push(clean.slice(1));
+  return [...new Set(values.filter(Boolean))];
+};
+
 const fetchOpenFoodFactsProduct = async (barcode, barcodeType) => {
+  for (const code of barcodeCandidates(barcode)) {
+    try {
+      const product = await fetchOpenFoodFactsOnce(code, barcodeType);
+      if (product?.name) {
+        return product;
+      }
+    } catch (error) {
+      console.error('[OFF] candidate failed:', code, error.message);
+    }
+  }
+  return null;
+};
+
+const fetchOpenFoodFactsOnce = async (barcode, barcodeType) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -81,7 +111,11 @@ const fetchOpenFoodFactsProduct = async (barcode, barcodeType) => {
       return null;
     }
 
-    return normalizeOpenFoodFactsProduct(data.product, barcode, barcodeType);
+    const normalized = normalizeOpenFoodFactsProduct(data.product, barcode, barcodeType);
+    if (!normalized.name || normalized.name === 'Unknown Product') {
+      return null;
+    }
+    return normalized;
   } catch (error) {
     console.error('[OFF] fetch error.message:', error.message);
     console.error('[OFF] fetch error.name:', error.name);

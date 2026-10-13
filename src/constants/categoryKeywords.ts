@@ -83,7 +83,7 @@ export const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'macaroni soup', 'instant oatmeal', 'cereals', 'granola bar', 'energy bar'
   ],
   'Inumin (Beverages)': [
-    'tubig', 'water', 'mineral water', 'wilkins', 'absolute', 'nature spring', 'viva', 'baguio water',
+    'tubig', 'water', 'mineral water', 'wilkins', 'absolute', 'nature spring', "nature's spring", 'natures spring', 'nature spring water', 'viva', 'baguio water',
     'juice', 'eight o\'clock juice', 'del monte juice', 'dole juice', 'tropicana', 'minute maid', 'tang',
     'zesto', 'tetra pack juice', 'softdrinks', 'cola', 'pepsi', 'coca-cola', 'coke', 'sprite', 'royal',
     'mountain dew', 'sting', 'cobra', 'red bull', 'energy drink', 'beer', 'san miguel pale', 'san miguel light',

@@ -15,9 +15,10 @@ import { WebView } from 'react-native-webview';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { SPACING } from '@constants/index';
 import { useTheme } from '../hooks/useTheme';
-import { parseOCRResult } from '@utils/index';
-import { lookupProductByBarcode, normalizeScannedBarcode } from '../api/products';
-import type { DetectedProduct } from '../types/product';
+import { parseOCRResult, getStoreBreakdown } from '@utils/index';
+import { lookupProductByBarcode, normalizeScannedBarcode, pickSuggestedPrice } from '../api/products';
+import { useGroceryStore } from '@store/index';
+import type { DetectedProduct, StorePriceInfo } from '../types/product';
 
 // HTML content for hidden WebView executing Tesseract.js in JS environment
 const TESSERACT_HTML = `
@@ -57,6 +58,7 @@ const TESSERACT_HTML = `
 `;
 
 const SUPPORTED_BARCODE_TYPES: BarcodeType[] = [
+  'qr',
   'ean13',
   'ean8',
   'upc_a',
@@ -85,8 +87,20 @@ const formatBarcodeType = (type: string): string => {
   return labels[normalized] || type.toUpperCase();
 };
 
+const getPriceRowKey = (rows: StorePriceInfo[], index: number) => {
+  const row = rows[index];
+  const rowSignature = JSON.stringify(row);
+  const occurrence = rows
+    .slice(0, index)
+    .filter((candidate) => JSON.stringify(candidate) === rowSignature).length;
+  return `price-${rowSignature}-${occurrence}`;
+};
+
 export const CameraScannerScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
+  const getRecordsForItemName = useGroceryStore((state) => state.getRecordsForItemName);
+  const carts = useGroceryStore((state) => state.carts);
+  const getStoreName = useGroceryStore((state) => state.getStoreName);
   const cameraRef = useRef<CameraView | null>(null);
   const webViewRef = useRef<WebView | null>(null);
 
@@ -223,12 +237,15 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
     product?: DetectedProduct | null
   ) => {
     const productName = product?.productName || product?.name || detectedName;
-    const cheapest = product?.prices?.find((row) => row.isAvailable !== false);
+    const suggested =
+      detectedPrice ||
+      (product?.suggestedPrice != null ? String(product.suggestedPrice) : '') ||
+      (product?.prices ? String(pickSuggestedPrice(product.prices) ?? '') : '');
     navigation.navigate('AddEditItem', {
       cartId,
       detectedName: productName,
-      detectedPrice: detectedPrice || (cheapest ? String(cheapest.price) : ''),
-      detectedQuantity,
+      detectedPrice: suggested,
+      detectedQuantity: detectedQuantity || '1',
       detectedUnit: product?.unit,
       detectedBarcode: barcodeValue || undefined,
       detectedBarcodeType: barcodeType || undefined,
@@ -286,13 +303,64 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
       setIsBarcodeScanned(true);
       setIsBarcodeProcessing(true);
 
+      if (rawType === 'qr') {
+        setIsBarcodeProcessing(false);
+        setBarcodeError(
+          'QR code detected. Please scan a product barcode instead.'
+        );
+        barcodeLockRef.current = false;
+        return;
+      }
+
       const result = await lookupProductByBarcode(barcodeValue, rawType);
       if (result.success && result.found && result.product) {
+        const productName = result.product.productName || result.product.name;
+        const cartPrices = carts.flatMap((cart) =>
+          cart.items
+            .filter(
+              (item) => item.name.trim().toLowerCase() === productName.trim().toLowerCase()
+            )
+            .map((item) => ({
+              storeName: getStoreName(cart.storeId) || 'Saved cart',
+              price: item.actualPrice || item.estimatedPrice,
+              currency: 'PHP',
+              isAvailable: true,
+              source: 'cart',
+            }))
+        );
+        const historyPrices = getStoreBreakdown(getRecordsForItemName(productName)).map(
+          (row) => ({
+            storeName: row.storeName,
+            price: row.price,
+            currency: 'PHP',
+            isAvailable: true,
+            source: 'purchase-history',
+          })
+        );
+        const mergedPrices = [
+          ...(result.product.prices || []),
+          ...cartPrices,
+          ...historyPrices,
+        ];
+        const suggestedPrice =
+          result.product.suggestedPrice ?? pickSuggestedPrice(mergedPrices);
         setDetectedProduct({
           ...result.product,
-          name: result.product.productName || result.product.name,
+          name: productName,
+          prices: mergedPrices,
+          suggestedPrice,
+          priceUnavailable: suggestedPrice === undefined,
         });
-        setBarcodeError(null);
+        setLiveDetected({
+          name: productName,
+          price: suggestedPrice != null ? String(suggestedPrice) : '',
+          quantity: '1',
+        });
+        setBarcodeError(
+          suggestedPrice == null
+            ? 'Product found. No PHP store price is available for this barcode yet.'
+            : null
+        );
       } else if (
         result.message?.includes('Unable to connect') ||
         (result.success === false &&
@@ -358,9 +426,9 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
     if (isProcessing || isBarcodeProcessing || !detectedBarcode) return;
     setStatusMessage(null);
     navigateToAddItem(
-      liveDetected.name || detectedProduct?.name || '',
+      liveDetected.name || detectedProduct?.productName || detectedProduct?.name || '',
       liveDetected.price,
-      liveDetected.quantity,
+      liveDetected.quantity || '1',
       detectedBarcode,
       detectedBarcodeType,
       detectedProduct
@@ -544,7 +612,9 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
         <Text style={styles.previewTitle}>Live Detected Fields</Text>
         <View style={styles.previewRow}>
           <Text style={styles.previewValue}>🏷️ Name: {liveDetected.name || '—'}</Text>
-          <Text style={styles.previewValue}>💰 Price: {liveDetected.price ? `₱${liveDetected.price}` : '—'}</Text>
+          <Text style={styles.previewValue}>
+            💰 Price: {liveDetected.price ? `₱${liveDetected.price}` : '—'}
+          </Text>
           <Text style={styles.previewValue}>⚖️ Qty: {liveDetected.quantity || '—'}</Text>
         </View>
         {statusMessage && (
@@ -570,8 +640,20 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
                 />
               ) : null}
               <Text style={styles.previewValue}>
-                ☑ {detectedProduct.productName || detectedProduct.name}
+                Name: {detectedProduct.productName || detectedProduct.name}
               </Text>
+              <Text style={styles.previewValue}>
+                Price:{' '}
+                {detectedProduct.suggestedPrice != null
+                  ? `₱${detectedProduct.suggestedPrice}`
+                  : 'unavailable'}
+              </Text>
+              <Text style={styles.previewValue}>Qty: 1</Text>
+              {detectedProduct.priceUnavailable ? (
+                <Text style={styles.statusText}>
+                  No PHP price is stored for this barcode yet. Enter it on the next screen; it will be reused on the next scan.
+                </Text>
+              ) : null}
               {detectedProduct.brand ? (
                 <Text style={styles.previewValue}>Brand: {detectedProduct.brand}</Text>
               ) : null}
@@ -589,8 +671,8 @@ export const CameraScannerScreen = ({ route, navigation }: any) => {
                 <Text style={styles.previewValue}>Unit: {detectedProduct.unit}</Text>
               ) : null}
               <Text style={styles.previewValue}>Barcode: {detectedBarcode}</Text>
-              {(detectedProduct.prices || []).slice(0, 4).map((row) => (
-                <Text key={`${row.storeName}-${row.price}`} style={styles.previewValue}>
+              {(detectedProduct.prices || []).slice(0, 4).map((row, index, rows) => (
+                <Text key={getPriceRowKey(rows, index)} style={styles.previewValue}>
                   {row.storeName}: ₱{row.price}
                   {row.stockStatus ? ` · ${row.stockStatus}` : ''}
                   {typeof row.stock === 'number' ? ` (${row.stock})` : ''}

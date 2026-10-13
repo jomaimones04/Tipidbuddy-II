@@ -19,6 +19,12 @@ describe('Category Detector', () => {
     expect(detectCategory('San Miguel Light')).toBe('Inumin (Beverages)');
   });
 
+  test('should categorize Nature Spring barcode product names as beverages', () => {
+    expect(detectCategory('Nature Spring 350ml')).toBe('Inumin (Beverages)');
+    expect(detectCategory("Nature's Spring Purified Water")).toBe('Inumin (Beverages)');
+    expect(detectCategory('Natures Spring Mineral Water')).toBe('Inumin (Beverages)');
+  });
+
   test('should prioritize the longest/most specific keyword to prevent false positives', () => {
     // 'puso ng saging' matches both 'puso ng saging' (Gulay) and 'saging' (Prutas).
     // It should prioritize 'puso ng saging' and return Gulay.

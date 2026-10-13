@@ -25,19 +25,17 @@ export const StoreComparisonScreen = ({ route, navigation }: any) => {
   const sorted = useMemo((): ItemPriceHistoryEntry[] => {
     if (!item) return [];
 
-    const fromGlobal = getRecordsForItemName(item.name);
-    if (fromGlobal.length > 0) {
-      return getStoreBreakdown(fromGlobal);
-    }
-
-    const records: ItemPriceHistoryEntry[] = [];
+    const records: ItemPriceHistoryEntry[] = [...getRecordsForItemName(item.name)];
     carts.forEach((c) => {
       if (c.isCompleted) {
         c.items.forEach((i) => {
-          if (i.name.trim().toLowerCase() === item.name.trim().toLowerCase()) {
+          if (
+            i.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
+            Number.isFinite(i.actualPrice ?? i.estimatedPrice)
+          ) {
             records.push({
               storeId: c.storeId || 'local',
-              storeName: getStoreName(c.storeId),
+              storeName: getStoreName(c.storeId) || 'Saved cart',
               price: i.actualPrice || i.estimatedPrice,
               date: c.completedAt || c.date || new Date().toISOString(),
             });
@@ -173,7 +171,7 @@ export const StoreComparisonScreen = ({ route, navigation }: any) => {
           <FlatList
             data={sorted}
             renderItem={renderStoreCard}
-            keyExtractor={(store) => store.storeName.toLowerCase().trim()}
+            keyExtractor={(store) => `${store.storeId}-${store.storeName.toLowerCase().trim()}`}
             contentContainerStyle={styles.list}
             scrollEnabled={true}
           />

@@ -11,6 +11,8 @@ export interface GroceryItem {
   category: string;
   categoryColor: string;
   storeId?: string;
+  barcode?: string;
+  barcodeType?: string;
   priceHistory: PriceRecord[];
   lastUpdated: string;
 }

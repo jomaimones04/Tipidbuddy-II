@@ -36,8 +36,12 @@ const findProductByBarcode = async (barcode) => {
   const clean = normalizeBarcode(barcode);
   if (!clean) return null;
 
-  console.log('Searching product:', clean);
-  const product = await Product.findOne({ barcode: clean });
+  const candidates = [clean];
+  if (/^\d{12}$/.test(clean)) candidates.push(`0${clean}`);
+  if (/^\d{13}$/.test(clean) && clean.startsWith('0')) candidates.push(clean.slice(1));
+
+  console.log('Searching product:', candidates);
+  const product = await Product.findOne({ barcode: { $in: [...new Set(candidates)] } });
   console.log('Product found:', product ? (product.productName || product.name) : null);
   return product;
 };

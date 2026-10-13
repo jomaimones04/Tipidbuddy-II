@@ -8,6 +8,7 @@ export interface StorePriceInfo {
   stock?: number;
   stockStatus?: string;
   isAvailable?: boolean;
+  source?: string;
 }
 
 export interface DetectedProduct {
@@ -24,6 +25,8 @@ export interface DetectedProduct {
   imageUrl?: string;
   source?: string;
   prices?: StorePriceInfo[];
+  suggestedPrice?: number;
+  priceUnavailable?: boolean;
 }
 
 export interface BarcodeLookupResponse {

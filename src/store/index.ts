@@ -21,6 +21,7 @@ import {
   getMostRecentPurchase,
   getStoreStatsBreakdown,
 } from '../utils/storeBreakdown';
+import { generateId } from '../utils/index';
 import {
   loadRemoteCarts,
   loadRemoteCategories,
@@ -39,6 +40,37 @@ import {
   syncStore,
   syncTemplate,
 } from '../api/sync';
+
+const normalizeCarts = (carts: Cart[]) => {
+  const cartIds = new Set<string>();
+  let changed = false;
+
+  const normalized = carts.map((cart) => {
+    let cartId = cart.id;
+    if (!cartId || cartIds.has(cartId)) {
+      cartId = generateId();
+      changed = true;
+    }
+    cartIds.add(cartId);
+
+    const itemIds = new Set<string>();
+    const items = cart.items.map((item) => {
+      let itemId = item.id;
+      if (!itemId || itemIds.has(itemId)) {
+        itemId = generateId();
+        changed = true;
+      }
+      itemIds.add(itemId);
+      return itemId === item.id ? item : { ...item, id: itemId };
+    });
+
+    return cartId === cart.id && items.every((item, index) => item === cart.items[index])
+      ? cart
+      : { ...cart, id: cartId, items };
+  });
+
+  return { carts: normalized, changed };
+};
 import { getHealth } from '../api/client';
 
 
@@ -164,7 +196,12 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
   getAllCarts: async () => {
     try {
       const cartsJson = await AsyncStorage.getItem(STORAGE_KEYS.CARTS);
-      const carts = cartsJson ? JSON.parse(cartsJson) : [];
+      const loadedCarts: Cart[] = cartsJson ? JSON.parse(cartsJson) : [];
+      const normalized = normalizeCarts(loadedCarts);
+      const carts = normalized.carts;
+      if (normalized.changed) {
+        await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(carts));
+      }
       set({ carts });
     } catch (error) {
       console.error('Error getting carts:', error);
@@ -673,8 +710,12 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
           ]);
 
         if (remoteCarts?.data?.length) {
-          await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(remoteCarts.data));
-          set({ carts: remoteCarts.data });
+          const normalized = normalizeCarts(remoteCarts.data);
+          await AsyncStorage.setItem(STORAGE_KEYS.CARTS, JSON.stringify(normalized.carts));
+          set({ carts: normalized.carts });
+          if (normalized.changed) {
+            normalized.carts.forEach(syncCart);
+          }
         } else {
           get().carts.forEach(syncCart);
         }
