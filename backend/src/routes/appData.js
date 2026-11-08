@@ -6,6 +6,26 @@ const Template = require('../models/Template');
 const AppSettings = require('../models/AppSettings');
 const ItemPriceHistory = require('../models/ItemPriceHistory');
 
+const delay = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const isTransientMongoError = (error) =>
+  error?.name === 'MongoNetworkError' ||
+  error?.name === 'MongoServerSelectionError' ||
+  /tlsv1 alert internal error|ssl3_read_bytes/i.test(error?.message || '');
+
+const withMongoRetry = async (operation, label) => {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isTransientMongoError(error) || attempt >= 3) throw error;
+      console.warn(`[Mongo] ${label} transient failure; retry ${attempt}/2:`, error.message);
+      await delay(attempt * 500);
+    }
+  }
+};
+
 const stripMongo = (doc) => {
   if (!doc) return doc;
   const value = typeof doc.toObject === 'function' ? doc.toObject() : doc;
@@ -24,6 +44,7 @@ const createCrudRouter = (Model, idField = 'id') => {
       const docs = await Model.find().lean();
       res.json({ success: true, data: docs.map(stripMongo) });
     } catch (error) {
+      console.error(`[Mongo] ${Model.modelName} list failed:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -36,6 +57,7 @@ const createCrudRouter = (Model, idField = 'id') => {
       }
       res.json({ success: true, data: stripMongo(doc) });
     } catch (error) {
+      console.error(`[Mongo] ${Model.modelName} read failed:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -53,6 +75,7 @@ const createCrudRouter = (Model, idField = 'id') => {
       );
       res.json({ success: true, data: stripMongo(saved) });
     } catch (error) {
+      console.error(`[Mongo] ${Model.modelName} create failed:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -67,10 +90,14 @@ const createCrudRouter = (Model, idField = 'id') => {
       console.log('[CompleteTrip] Updating MongoDB');
     }
     try {
-      const saved = await Model.findOneAndUpdate(
-        { [idField]: req.params.id },
-        { ...req.body, [idField]: req.params.id },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
+      const saved = await withMongoRetry(
+        () =>
+          Model.findOneAndUpdate(
+            { [idField]: req.params.id },
+            { ...req.body, [idField]: req.params.id },
+            { new: true, upsert: true, setDefaultsOnInsert: true }
+          ),
+        `${Model.modelName} update`
       );
       if (isCart) {
         console.log('[CompleteTrip] MongoDB update successful');
@@ -89,6 +116,7 @@ const createCrudRouter = (Model, idField = 'id') => {
       }
       res.json({ success: true, data: stripMongo(saved) });
     } catch (error) {
+      console.error(`[Mongo] ${Model.modelName} update failed:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -98,6 +126,7 @@ const createCrudRouter = (Model, idField = 'id') => {
       await Model.findOneAndDelete({ [idField]: req.params.id });
       res.json({ success: true });
     } catch (error) {
+      console.error(`[Mongo] ${Model.modelName} delete failed:`, error.message);
       res.status(500).json({ success: false, message: error.message });
     }
   });
@@ -148,19 +177,30 @@ purchasesRouter.get('/', async (_req, res) => {
 purchasesRouter.put('/', async (req, res) => {
   try {
     const map = req.body || {};
+    if (typeof map !== 'object' || Array.isArray(map)) {
+      return res.status(400).json({ success: false, message: 'Expected a price history object' });
+    }
     const keys = Object.keys(map);
-    console.log('[Mongo] itempricehistories upsert keys=', keys.length);
-    await Promise.all(
-      keys.map((key) =>
-        ItemPriceHistory.findOneAndUpdate(
-          { key },
-          { key, ...map[key] },
-          { upsert: true, setDefaultsOnInsert: true }
-        )
-      )
-    );
+    if (keys.length > 0) {
+      await withMongoRetry(
+        () =>
+          ItemPriceHistory.bulkWrite(
+            keys.map((key) => ({
+              updateOne: {
+                filter: { key },
+                update: { $set: { key, ...map[key] } },
+                upsert: true,
+              },
+            })),
+            { ordered: true }
+          ),
+        'Price history upsert'
+      );
+    }
+    console.log('[PriceHistory] MongoDB upsert successful; keys=', keys.length);
     res.json({ success: true });
   } catch (error) {
+    console.error('[PriceHistory] MongoDB upsert failed:', error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 });

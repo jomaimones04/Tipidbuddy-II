@@ -1,15 +1,15 @@
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '1.1.1.1']);
-
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const { connectDatabase, isDatabaseConnected } = require('./config/db');
+const {
+  connectDatabase,
+  isDatabaseConnected,
+  verifyDatabase,
+} = require('./config/db');
 
 const productRoutes = require('./routes/products');
-const { ensureBarcodeIndex } = require('./services/productService');
 const User = require('./models/User');
 
 const {
@@ -29,12 +29,31 @@ const port = Number(process.env.PORT) || 5000;
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'TipidBuddy API is running',
-    database: isDatabaseConnected() ? 'connected' : 'disconnected',
-  });
+app.get('/api/health', async (_req, res) => {
+  try {
+    if (!isDatabaseConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'TipidBuddy API is running, but MongoDB is disconnected',
+        database: 'disconnected',
+      });
+    }
+
+    await verifyDatabase();
+    res.json({
+      success: true,
+      message: 'TipidBuddy API and MongoDB are healthy',
+      database: 'connected',
+      databaseName: mongoose.connection.name,
+    });
+  } catch (error) {
+    console.error('[Health] MongoDB ping failed:', error.message);
+    res.status(503).json({
+      success: false,
+      message: 'TipidBuddy API is running, but MongoDB is unavailable',
+      database: 'unavailable',
+    });
+  }
 });
 
 app.get('/api/test-db', async (_req, res) => {
@@ -81,8 +100,12 @@ app.use('/api/expenses', expensesRouter);
 
 const start = async () => {
   try {
-    await connectDatabase();
-    await ensureBarcodeIndex();
+    const databaseReady = await connectDatabase();
+    if (databaseReady) {
+      console.log('[MongoDB] Barcode index is managed by the Product schema.');
+    } else {
+      console.warn('[MongoDB] Starting API in degraded mode; database health checks will report unavailable.');
+    }
     app.listen(port, '0.0.0.0', () => {
       console.log(`TipidBuddy API listening on port ${port}`);
     });

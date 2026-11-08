@@ -125,7 +125,8 @@ interface GroceryStore {
     itemName: string,
     category: string,
     categoryColor: string,
-    record: ItemPriceHistoryEntry
+    record: ItemPriceHistoryEntry,
+    syncRemote?: boolean
   ) => Promise<void>;
   getRecordsForItemName: (itemName: string) => ItemPriceHistoryEntry[];
   getItemStats: (itemName: string) => {
@@ -540,7 +541,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
     }
   },
 
-  addPriceRecord: async (itemName, category, categoryColor, record) => {
+  addPriceRecord: async (itemName, category, categoryColor, record, syncRemote = true) => {
     try {
       const key = itemName.toLowerCase().trim();
       const existing = get().itemPriceHistory[key];
@@ -560,7 +561,7 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         JSON.stringify(itemPriceHistory)
       );
       set({ itemPriceHistory });
-      syncPurchases(itemPriceHistory);
+      if (syncRemote) syncPurchases(itemPriceHistory);
     } catch (error) {
       console.error('Error adding price record:', error);
     }

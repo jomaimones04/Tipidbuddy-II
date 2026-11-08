@@ -18,7 +18,7 @@ import { COLORS, SPACING } from '@constants/index';
 import { formatPesoAmount } from '@utils/index';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { SelectStoreSheet } from '@components/SelectStoreSheet';
 import { persistCompletedCart, persistPurchaseHistory } from '../api/sync';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,13 +100,13 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
           storeName,
           price: item.actualPrice || item.estimatedPrice,
           date: purchasedAt,
-        });
+        }, false);
       }
 
       const purchaseMap = useGroceryStore.getState().itemPriceHistory;
       const savedPurchases = await persistPurchaseHistory(purchaseMap);
       if (!savedPurchases) {
-        console.error('[CompleteTrip] Price history save failed after cart save');
+        console.error('[CompleteTrip] Price history save failed after cart save; local history is preserved.');
       }
       if (cart.storeId) await addRecentStore(cart.storeId);
 
@@ -378,10 +378,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
   };
 
   const actionBar = !cart.isCompleted ? (
-    <View
-      style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
-      onTouchStart={closeOpenedSwipeable}
-    >
+    <View style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}>
       <TouchableOpacity
         style={styles.actionBarButton}
         onPress={() => handleAddItem('voice')}
@@ -418,10 +415,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     year: 'numeric',
   });
   const cartHeader = (
-    <View
-      style={[styles.headerContainer, { paddingTop: insets.top }]}
-      onTouchStart={closeOpenedSwipeable}
-    >
+    <View style={[styles.headerContainer, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <TouchableOpacity
           style={styles.headerIconButton}
@@ -461,7 +455,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     </View>
   );
   const budgetSummary = (
-    <View style={styles.summaryContainer} onTouchStart={closeOpenedSwipeable}>
+    <View style={styles.summaryContainer}>
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
           <Text style={styles.statLabel}>Budget:</Text>
@@ -729,7 +723,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         style={styles.content}
         contentContainerStyle={{ paddingBottom: SPACING.xl * 3 }}
         renderSectionHeader={({ section }) => (
-          <View style={styles.categoryHeader} onTouchStart={closeOpenedSwipeable}>
+          <View style={styles.categoryHeader}>
             <Text style={styles.categoryTitle}>
               {section.isCheckedSection ? 'CHECKED ITEMS' : section.title}
             </Text>
@@ -738,6 +732,11 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         )}
         renderItem={({ item }) => (
           <Swipeable
+            ref={(ref) => {
+              if (!ref && openedSwipeableRef.current) {
+                openedSwipeableRef.current = null;
+              }
+            }}
             friction={2}
             rightThreshold={40}
             overshootRight={false}
@@ -1023,7 +1022,6 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.border,
-    backgroundColor: theme.surface,
     gap: SPACING.md,
   },
   checkbox: {
@@ -1082,26 +1080,8 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     fontWeight: '700',
     color: theme.text,
   },
-  swipeActions: {
-    flexDirection: 'row',
-    alignSelf: 'stretch',
-  },
-  swipeAction: {
-    width: 76,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-  },
-  editSwipeAction: {
-    backgroundColor: '#009B69',
-  },
-  deleteSwipeAction: {
-    backgroundColor: '#F44343',
-  },
-  swipeActionText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: '600',
+  actionButton: {
+    padding: 6,
   },
   menuBackdrop: {
     flex: 1,
