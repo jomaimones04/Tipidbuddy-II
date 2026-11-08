@@ -17,6 +17,7 @@
       },
       "package": "com.tipidbuddy.app",
       "usesCleartextTraffic": true,
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.CAMERA",

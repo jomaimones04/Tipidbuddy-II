@@ -14,6 +14,9 @@ import { useMicrophonePermissions } from 'expo-camera';
 import { COLORS, SPACING } from '@constants/index';
 import { parseVoiceInput } from '@utils/index';
 import type { ParsedVoiceItem } from '../utils/voiceParser';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../hooks/useTheme';
 
 const SPEECH_HTML = `
 <!DOCTYPE html>
@@ -106,6 +109,9 @@ type VoiceStatus =
 
 export const VoiceInputModal = ({ route, navigation }: any) => {
   const { cartId } = route.params;
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const styles = React.useMemo(() => getStyles(theme), [theme]);
   const webViewRef = useRef<WebView | null>(null);
   const [permission, requestPermission] = useMicrophonePermissions();
   const [status, setStatus] = useState<VoiceStatus>('idle');
@@ -206,14 +212,6 @@ export const VoiceInputModal = ({ route, navigation }: any) => {
     sendToWebView({ action: 'stop' });
   };
 
-  const handleSpeakAgain = () => {
-    setRecognizedText('');
-    setParsedItem(null);
-    setErrorMessage(null);
-    setStatus('idle');
-    void startListening();
-  };
-
   const handleUseThis = () => {
     if (!parsedItem?.name) return;
     navigation.navigate('AddEditItem', {
@@ -292,9 +290,11 @@ export const VoiceInputModal = ({ route, navigation }: any) => {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Voice Input</Text>
-          <View style={styles.placeholder} />
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="close" size={22} color={theme.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Add by Voice</Text>
         </View>
         <View style={styles.permissionBox}>
           <Text style={styles.permissionText}>
@@ -313,40 +313,24 @@ export const VoiceInputModal = ({ route, navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Voice Input</Text>
-        <View style={styles.placeholder} />
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Back to cart"
+        >
+          <MaterialIcons name="close" size={22} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Add by Voice</Text>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
-        <View style={styles.micContainer}>
-          <Animated.View style={[styles.micPulse, { transform: [{ scale: micScale }] }]}>
-            <TouchableOpacity
-              style={[styles.micButton, status === 'listening' && styles.micButtonActive]}
-              onPress={() => {
-                if (status === 'listening') {
-                  stopListening();
-                  return;
-                }
-                void startListening();
-              }}
-              disabled={!webViewReady || status === 'processing'}
-            >
-              <Text style={styles.micIcon}>🎤</Text>
-            </TouchableOpacity>
-          </Animated.View>
-          <Text style={styles.micText}>
-            {status === 'listening'
-              ? 'Listening... Speak now'
-              : status === 'processing'
-                ? 'Processing...'
-                : 'Tap the microphone to speak'}
-          </Text>
-          {status === 'listening' && (
-            <TouchableOpacity style={styles.stopButton} onPress={stopListening}>
-              <Text style={styles.stopButtonText}>Stop</Text>
-            </TouchableOpacity>
-          )}
+        <View style={styles.instructionBlock}>
+          <Text style={styles.instructionTitle}>Try saying</Text>
+          <Text style={styles.exampleText}>"eggs"</Text>
+          <Text style={styles.exampleText}>"3 chicken breast"</Text>
+          <Text style={styles.exampleText}>"rice 150"</Text>
         </View>
 
         {recognizedText ? (
@@ -367,32 +351,41 @@ export const VoiceInputModal = ({ route, navigation }: any) => {
         ) : null}
 
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-        <View style={styles.instructionsBox}>
-          <Text style={styles.instructionsTitle}>Tip:</Text>
-          <Text style={styles.instructionsText}>
-            Try "Bigas 5 kilo", "3 bote ng mantika", or "2 packs ng noodles".
-          </Text>
-        </View>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        {status === 'error' || status === 'result' ? (
-          <TouchableOpacity style={styles.secondaryFooterButton} onPress={handleSpeakAgain}>
-            <Text style={styles.secondaryFooterButtonText}>
-              {status === 'error' ? 'Try Again' : 'Speak Again'}
-            </Text>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, SPACING.lg) }]}>
+        <Text style={styles.micText}>
+          {status === 'listening'
+            ? 'Listening… Tap the microphone to stop'
+            : status === 'processing'
+              ? 'Processing…'
+              : errorMessage || "Didn't catch that — tap mic to retry"}
+        </Text>
+        <Animated.View style={[styles.micPulse, { transform: [{ scale: micScale }] }]}>
+          <TouchableOpacity
+            style={[styles.micButton, status === 'listening' && styles.micButtonActive]}
+            onPress={() => {
+              if (status === 'listening') stopListening();
+              else void startListening();
+            }}
+            disabled={!webViewReady || status === 'processing'}
+            accessibilityRole="button"
+            accessibilityLabel={status === 'listening' ? 'Stop voice input' : 'Start voice input'}
+          >
+            <MaterialIcons
+              name={status === 'listening' ? 'mic-off' : 'mic'}
+              size={30}
+              color={theme.primary}
+            />
           </TouchableOpacity>
-        ) : null}
+        </Animated.View>
         <TouchableOpacity
           style={[styles.confirmButton, !parsedItem?.name && styles.confirmButtonDisabled]}
           onPress={handleUseThis}
           disabled={!parsedItem?.name}
+          accessibilityRole="button"
         >
-          <Text style={styles.confirmButtonText}>Use This</Text>
+          <Text style={styles.confirmButtonText}>Dictate items to add</Text>
         </TouchableOpacity>
       </View>
 
@@ -413,23 +406,31 @@ export const VoiceInputModal = ({ route, navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.surface,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.surface,
+    gap: SPACING.md,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: theme.inputBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 26,
+    fontSize: 18,
     fontWeight: '600',
-    color: COLORS.white,
+    color: theme.text,
   },
   placeholder: {
     width: 24,
@@ -438,38 +439,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentInner: {
+    flexGrow: 1,
     padding: SPACING.lg,
+    justifyContent: 'center',
+  },
+  instructionBlock: {
+    alignItems: 'center',
+    paddingVertical: SPACING.xl,
+  },
+  instructionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.text,
+    marginBottom: SPACING.xs,
+  },
+  exampleText: {
+    fontSize: 18,
+    color: theme.textMuted,
+    marginTop: SPACING.xs,
   },
   micContainer: {
     alignItems: 'center',
     marginVertical: SPACING.xl,
   },
   micPulse: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
   micButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: COLORS.primary,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: `${theme.primary}18`,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: COLORS.primary,
+    shadowColor: theme.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   micButtonActive: {
-    backgroundColor: COLORS.danger,
+    backgroundColor: `${theme.danger}25`,
   },
   micIcon: {
     fontSize: 48,
   },
   micText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginTop: SPACING.md,
+    fontSize: 13,
+    color: theme.textMuted,
+    marginBottom: SPACING.md,
     textAlign: 'center',
   },
   stopButton: {
@@ -486,7 +503,7 @@ const styles = StyleSheet.create({
   transcriptBox: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.lg,
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.card,
     borderRadius: 12,
     marginBottom: SPACING.lg,
     borderLeftWidth: 4,
@@ -494,16 +511,16 @@ const styles = StyleSheet.create({
   },
   transcriptLabel: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: theme.textSecondary,
     marginBottom: SPACING.sm,
   },
   transcriptText: {
     fontSize: 16,
-    color: COLORS.text,
+    color: theme.text,
     fontStyle: 'italic',
   },
   resultCard: {
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.card,
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
@@ -512,12 +529,12 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.primary,
+    color: theme.primary,
     marginBottom: 4,
   },
   resultRow: {
     fontSize: 14,
-    color: COLORS.text,
+    color: theme.text,
     fontWeight: '600',
   },
   errorText: {
@@ -530,20 +547,20 @@ const styles = StyleSheet.create({
   instructionsBox: {
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.lg,
-    backgroundColor: `${COLORS.primary}10`,
+    backgroundColor: `${theme.primary}10`,
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
+    borderLeftColor: theme.primary,
   },
   instructionsTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: theme.primary,
     marginBottom: SPACING.xs,
   },
   instructionsText: {
     fontSize: 13,
-    color: COLORS.text,
+    color: theme.text,
     lineHeight: 20,
   },
   permissionBox: {
@@ -555,17 +572,17 @@ const styles = StyleSheet.create({
   permissionText: {
     fontSize: 16,
     textAlign: 'center',
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: SPACING.md,
   },
   primaryButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     borderRadius: 12,
     paddingVertical: SPACING.md,
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: COLORS.white,
+    color: theme.headerText,
     fontWeight: '700',
   },
   secondaryButton: {
@@ -573,49 +590,53 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
   },
   secondaryButtonText: {
-    color: COLORS.text,
+    color: theme.text,
     fontWeight: '600',
   },
   footer: {
-    flexDirection: 'row',
+    alignItems: 'center',
     gap: SPACING.sm,
-    padding: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
+    borderTopColor: theme.border,
+    backgroundColor: theme.surface,
   },
   cancelButton: {
     flex: 1,
     paddingVertical: SPACING.md,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: theme.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
   },
   secondaryFooterButton: {
     flex: 1,
     paddingVertical: SPACING.md,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   secondaryFooterButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: theme.primary,
   },
   confirmButton: {
-    flex: 1,
-    paddingVertical: SPACING.md,
+    width: '100%',
+    minHeight: 56,
+    flex: 0,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -625,7 +646,7 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
+    color: theme.headerText,
   },
   hiddenWebView: {
     width: 1,

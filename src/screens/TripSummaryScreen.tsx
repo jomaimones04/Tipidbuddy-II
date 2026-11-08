@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,10 +21,10 @@ import Animated, {
   Extrapolate,
 } from 'react-native-reanimated';
 import { useGroceryStore } from '@store/index';
-import { COLORS, SPACING } from '@constants/index';
-import { formatPesoAmount } from '@utils/index';
+import { SPACING } from '@constants/index';
+import { formatPesoAmount, generateId } from '@utils/index';
 import { useTheme } from '../hooks/useTheme';
-import type { GroceryItem } from '../types/index';
+import type { CartTemplate, GroceryItem } from '../types/index';
 
 const DONUT_RADIUS = 115;
 const DONUT_THICKNESS = 18;
@@ -31,13 +33,17 @@ const AMOUNT_ANIMATION_DURATION = 600;
 
 export const TripSummaryScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
-  const { carts, getStoreName } = useGroceryStore();
+  const { carts, getStoreName, addTemplate } = useGroceryStore();
   const cart = carts.find((c) => c.id === cartId);
   const theme = useTheme();
   const styles = React.useMemo(() => getStyles(theme), [theme]);
 
   const [categorySort, setCategorySort] = useState<'highest' | 'lowest' | 'a-z'>('highest');
   const [showCategorySortSheet, setShowCategorySortSheet] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [templateError, setTemplateError] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   // Animations
   const donutProgress = useSharedValue(0);
@@ -85,9 +91,9 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
 
   // Determine ring color
   const getRingColor = () => {
-    if (isUnderBudget) return COLORS.success;
-    if (isNearBudget) return COLORS.accent;
-    return COLORS.danger;
+    if (isUnderBudget) return theme.success;
+    if (isNearBudget) return theme.accent;
+    return theme.danger;
   };
 
   const ringColor = getRingColor();
@@ -117,7 +123,7 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
       }
     });
 
-    let sorted = Array.from(map.values());
+    const sorted = Array.from(map.values());
     if (categorySort === 'highest') {
       sorted.sort((a, b) => b.amount - a.amount);
     } else if (categorySort === 'lowest') {
@@ -139,6 +145,39 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
     { key: 'lowest', label: 'Lowest Spent' },
     { key: 'a-z', label: 'Name (A-Z)' },
   ];
+
+  const handleSaveTemplate = async () => {
+    const name = templateName.trim();
+    if (!name) {
+      setTemplateError('Enter a name for this template.');
+      return;
+    }
+
+    const template: CartTemplate = {
+      id: generateId(),
+      name,
+      isSystem: false,
+      items: cart.items.map(({ id: _id, isChecked: _isChecked, priceHistory: _priceHistory, ...item }) => item),
+    };
+
+    setSavingTemplate(true);
+    setTemplateError('');
+    try {
+      await addTemplate(template);
+      if (!useGroceryStore.getState().templates.some((saved) => saved.id === template.id)) {
+        setTemplateError('The template could not be saved. Please try again.');
+        return;
+      }
+      setTemplateName('');
+      setShowSaveTemplateModal(false);
+      Alert.alert('Template saved', 'This trip is ready to reuse from Cart Templates.');
+    } catch (error) {
+      console.error('Error saving trip as template:', error);
+      setTemplateError('The template could not be saved. Please try again.');
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -171,6 +210,7 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
             ringColor={ringColor}
             progress={donutProgress}
             amountProgress={spentAmount}
+            theme={theme}
           />
         </View>
 
@@ -195,6 +235,19 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
             <Text style={styles.navigationCardArrow}>›</Text>
           </TouchableOpacity>
         </Animated.View>
+
+        <TouchableOpacity
+          style={styles.saveTemplateButton}
+          onPress={() => {
+            setTemplateName(`${cart.name} Template`);
+            setTemplateError('');
+            setShowSaveTemplateModal(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="bookmark-outline" size={18} color={theme.primary} />
+          <Text style={styles.saveTemplateButtonText}>Save as Template</Text>
+        </TouchableOpacity>
 
         {/* What You Bought Section */}
         <View style={styles.whatYouBoughtContainer}>
@@ -268,7 +321,7 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
                       <Ionicons
                         name="checkmark"
                         size={20}
-                        color={COLORS.primary}
+                        color={theme.primary}
                         style={styles.sortSheetCheckmark}
                       />
                     )}
@@ -288,6 +341,51 @@ export const TripSummaryScreen = ({ route, navigation }: any) => {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={showSaveTemplateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSaveTemplateModal(false)}
+      >
+        <View style={styles.templateModalOverlay}>
+          <View style={styles.templateModal}>
+            <Text style={styles.templateModalTitle}>Save as Template</Text>
+            <Text style={styles.templateModalSubtitle}>
+              Reuse these {cart.items.length} {cart.items.length === 1 ? 'item' : 'items'} on a future trip.
+            </Text>
+            <TextInput
+              style={styles.templateNameInput}
+              value={templateName}
+              onChangeText={(value) => {
+                setTemplateName(value);
+                if (templateError) setTemplateError('');
+              }}
+              placeholder="Template name"
+              placeholderTextColor={theme.textSecondary}
+              maxLength={60}
+              autoFocus
+            />
+            {!!templateError && <Text style={styles.templateError}>{templateError}</Text>}
+            <View style={styles.templateModalActions}>
+              <TouchableOpacity
+                style={styles.templateCancelButton}
+                onPress={() => setShowSaveTemplateModal(false)}
+                disabled={savingTemplate}
+              >
+                <Text style={styles.templateCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.templateSaveButton, savingTemplate && styles.templateSaveDisabled]}
+                onPress={handleSaveTemplate}
+                disabled={savingTemplate}
+              >
+                <Text style={styles.templateSaveText}>{savingTemplate ? 'Saving...' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -300,6 +398,7 @@ interface DonutChartProps {
   ringColor: string;
   progress: any;
   amountProgress: any;
+  theme: any;
 }
 
 const DonutChart: React.FC<DonutChartProps> = ({
@@ -309,6 +408,7 @@ const DonutChart: React.FC<DonutChartProps> = ({
   ringColor,
   progress,
   amountProgress,
+  theme,
 }) => {
   const svgSize = 320;
   const centerX = svgSize / 2;
@@ -346,7 +446,7 @@ const DonutChart: React.FC<DonutChartProps> = ({
             cx={centerX}
             cy={centerY}
             r={DONUT_RADIUS}
-            stroke="#E5E7EB"
+            stroke={theme.border}
             strokeWidth={DONUT_THICKNESS}
             fill="none"
           />
@@ -380,22 +480,22 @@ const DonutChart: React.FC<DonutChartProps> = ({
         ]}
         pointerEvents="none"
       >
-        <Text style={{ fontSize: 13, fontWeight: '500', color: COLORS.textLight }}>Spent</Text>
+        <Text style={{ fontSize: 13, fontWeight: '500', color: theme.textSecondary }}>Spent</Text>
         <CountUpText
           value={spent}
-          style={{ fontSize: 21, fontWeight: '700', color: COLORS.text }}
+          style={{ fontSize: 21, fontWeight: '700', color: theme.text }}
         />
         <Text
           style={{
             fontSize: 13,
             fontWeight: '500',
-            color: COLORS.textLight,
+            color: theme.textSecondary,
             marginTop: 8,
           }}
         >
           Budget
         </Text>
-        <Text style={{ fontSize: 14, fontWeight: '500', color: COLORS.textLight, marginTop: 4 }}>
+        <Text style={{ fontSize: 14, fontWeight: '500', color: theme.textSecondary, marginTop: 4 }}>
           ₱{formatPesoAmount(budget)}
         </Text>
       </Animated.View>
@@ -616,6 +716,92 @@ const getStyles = (theme: any) =>
       borderRadius: 12,
       overflow: 'hidden',
     },
+    saveTemplateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: SPACING.sm,
+      marginHorizontal: SPACING.lg,
+      marginBottom: SPACING.lg,
+      paddingVertical: SPACING.md,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+    },
+    saveTemplateButtonText: {
+      color: theme.primary,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    templateModalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      padding: SPACING.lg,
+      backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    },
+    templateModal: {
+      padding: SPACING.lg,
+      borderRadius: 16,
+      backgroundColor: theme.card,
+    },
+    templateModalTitle: {
+      color: theme.text,
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    templateModalSubtitle: {
+      color: theme.textSecondary,
+      fontSize: 14,
+      marginTop: SPACING.xs,
+      marginBottom: SPACING.md,
+    },
+    templateNameInput: {
+      color: theme.text,
+      backgroundColor: theme.inputBackground,
+      borderColor: theme.border,
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      fontSize: 16,
+    },
+    templateError: {
+      color: theme.danger,
+      fontSize: 13,
+      marginTop: SPACING.xs,
+    },
+    templateModalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: SPACING.sm,
+      marginTop: SPACING.lg,
+    },
+    templateCancelButton: {
+      minHeight: 44,
+      justifyContent: 'center',
+      paddingHorizontal: SPACING.md,
+    },
+    templateCancelText: {
+      color: theme.textSecondary,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+    templateSaveButton: {
+      minHeight: 44,
+      justifyContent: 'center',
+      paddingHorizontal: SPACING.lg,
+      borderRadius: 10,
+      backgroundColor: theme.primary,
+    },
+    templateSaveDisabled: {
+      opacity: 0.6,
+    },
+    templateSaveText: {
+      color: theme.headerText,
+      fontSize: 15,
+      fontWeight: '700',
+    },
     navigationCardContent: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -677,25 +863,29 @@ const getStyles = (theme: any) =>
       paddingBottom: SPACING.lg,
     },
     sortSheetBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     sortSheetWrapper: {
       gap: SPACING.sm,
     },
     sortSheetOptionsBlock: {
-      backgroundColor: '#2C2C2E',
+      backgroundColor: theme.card,
       borderRadius: 14,
       overflow: 'hidden',
     },
     sortSheetTitle: {
       fontSize: 15,
       fontWeight: '600',
-      color: '#FFFFFF',
+      color: theme.text,
       textAlign: 'center',
       paddingVertical: SPACING.md,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+      borderBottomColor: theme.border,
     },
     sortSheetOptionRow: {
       flexDirection: 'row',
@@ -707,16 +897,16 @@ const getStyles = (theme: any) =>
     },
     sortSheetOptionBorder: {
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+      borderBottomColor: theme.border,
     },
     sortSheetOptionText: {
       fontSize: 16,
       fontWeight: '400',
-      color: '#FFFFFF',
+      color: theme.text,
       textAlign: 'center',
     },
     sortSheetOptionTextSelected: {
-      color: COLORS.primary,
+      color: theme.primary,
       fontWeight: '600',
     },
     sortSheetCheckmark: {
@@ -724,7 +914,7 @@ const getStyles = (theme: any) =>
       right: SPACING.lg,
     },
     sortSheetCancelBlock: {
-      backgroundColor: '#2C2C2E',
+      backgroundColor: theme.card,
       borderRadius: 14,
       overflow: 'hidden',
     },
@@ -735,7 +925,7 @@ const getStyles = (theme: any) =>
     sortSheetCancelText: {
       fontSize: 16,
       fontWeight: '600',
-      color: COLORS.primary,
+      color: theme.primary,
     },
     bottomSpacer: {
       height: SPACING.xl,

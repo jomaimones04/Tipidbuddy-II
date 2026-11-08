@@ -1,29 +1,142 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   SectionList,
   Alert,
   Animated,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useGroceryStore } from '@store/index';
-import { COLORS, SPACING, DEFAULT_CATEGORIES } from '@constants/index';
+import { COLORS, SPACING } from '@constants/index';
 import { formatPesoAmount } from '@utils/index';
 import * as Haptics from 'expo-haptics';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SelectStoreSheet } from '@components/SelectStoreSheet';
 import { persistCompletedCart, persistPurchaseHistory } from '../api/sync';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../hooks/useTheme';
 
 export const CartDetailScreen = ({ route, navigation }: any) => {
   const { cartId } = route.params;
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const { carts, updateCart, getStoreName, addPriceRecord, addRecentStore } =
     useGroceryStore();
+  const theme = useTheme();
+  const styles = React.useMemo(() => getStyles(theme), [theme]);
   const cart = carts.find((c) => c.id === cartId);
-  const [showFABMenu, setShowFABMenu] = useState(false);
+  const categoryOrderRef = useRef<{ cartId: string; categories: string[] } | null>(null);
   const [showStoreSheet, setShowStoreSheet] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showTripSummary, setShowTripSummary] = useState(false);
+  const [editType, setEditType] = useState<'name' | 'budget' | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [isSavingTrip, setIsSavingTrip] = useState(false);
+  const savingTrip = useRef(false);
+  const completionTriggered = useRef(false);
+  const openedSwipeableRef = useRef<Swipeable | null>(null);
+
+  if (cart && categoryOrderRef.current?.cartId !== cart.id) {
+    categoryOrderRef.current = {
+      cartId: cart.id,
+      categories: [...new Set(cart.items.map((item) => item.category || 'Uncategorized'))],
+    };
+  } else if (cart && categoryOrderRef.current) {
+    cart.items.forEach((item) => {
+      const category = item.category || 'Uncategorized';
+      if (!categoryOrderRef.current?.categories.includes(category)) {
+        categoryOrderRef.current?.categories.push(category);
+      }
+    });
+  }
+
+  const saveCompletedTrip = async () => {
+    if (
+      !cart ||
+      savingTrip.current ||
+      cart.isCompleted ||
+      cart.items.length === 0
+    ) {
+      return;
+    }
+    savingTrip.current = true;
+    setIsSavingTrip(true);
+    try {
+      const purchasedAt = new Date().toISOString();
+      const storeName = getStoreName(cart.storeId);
+      const purchasedItems = cart.items.filter((item) => item.isChecked);
+      const tripTotal = purchasedItems.reduce(
+        (sum, item) =>
+          sum + (item.actualPrice || item.estimatedPrice) * item.quantity,
+        0
+      );
+      const updatedCart = {
+        ...cart,
+        totalSpent: tripTotal,
+        isCompleted: true,
+        completedAt: purchasedAt,
+      };
+
+      const savedRemote = await persistCompletedCart(updatedCart);
+      if (!savedRemote) {
+        Alert.alert(
+          'Could not save trip',
+          'The trip was not saved to the database. Check that the backend is running and try again. Your cart was not cleared.'
+        );
+        return;
+      }
+
+      for (const item of purchasedItems) {
+        await addPriceRecord(item.name, item.category, item.categoryColor, {
+          storeId: cart.storeId || 'local',
+          storeName,
+          price: item.actualPrice || item.estimatedPrice,
+          date: purchasedAt,
+        });
+      }
+
+      const purchaseMap = useGroceryStore.getState().itemPriceHistory;
+      const savedPurchases = await persistPurchaseHistory(purchaseMap);
+      if (!savedPurchases) {
+        console.error('[CompleteTrip] Price history save failed after cart save');
+      }
+      if (cart.storeId) await addRecentStore(cart.storeId);
+
+      await updateCart(updatedCart);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowTripSummary(false);
+      navigation.replace('TripSummary', { cartId });
+    } catch (error) {
+      console.error('[CompleteTrip] Failed to save trip:', error);
+      Alert.alert('Could not save trip', 'An error occurred while saving this trip. Please try again.');
+    } finally {
+      savingTrip.current = false;
+      setIsSavingTrip(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!cart || cart.isCompleted) return;
+    const allItemsChecked =
+      cart.items.length > 0 && cart.items.every((item) => item.isChecked);
+    if (!allItemsChecked) {
+      completionTriggered.current = false;
+      setShowTripSummary(false);
+      return;
+    }
+    if (completionTriggered.current) return;
+
+    completionTriggered.current = true;
+    setShowTripSummary(true);
+  }, [cart?.items, cart?.isCompleted]);
 
   if (!cart) {
     return (
@@ -61,26 +174,72 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
 
   // Group items by category
   const groupItemsByCategory = () => {
-    const grouped: { [key: string]: any[] } = {};
-    cart.items.forEach((item) => {
-      const cat = item.category || 'Uncategorized';
-      if (!grouped[cat]) {
-        grouped[cat] = [];
-      }
-      grouped[cat].push(item);
-    });
-    return Object.entries(grouped).map(([category, items]) => ({
-      title: category,
-      data: items,
-    }));
+    const categories = new Map<string, typeof cart.items>();
+    cart.items
+      .filter((item) => !item.isChecked)
+      .forEach((item) => {
+        const category = item.category || 'Uncategorized';
+        const items = categories.get(category) || [];
+        categories.set(category, [...items, item]);
+      });
+
+    const categoryOrder = categoryOrderRef.current?.categories || [];
+    const categorySections = Array.from(categories, ([title, data]) => ({
+      title,
+      data,
+      isCheckedSection: false,
+    })).sort((a, b) => categoryOrder.indexOf(a.title) - categoryOrder.indexOf(b.title));
+    const checkedItems = cart.items.filter((item) => item.isChecked);
+    if (checkedItems.length > 0) {
+      categorySections.push({
+        title: 'Checked Items',
+        data: checkedItems,
+        isCheckedSection: true,
+      });
+    }
+
+    return categorySections;
   };
 
   const handleCheckItem = async (itemId: string) => {
     if (cart.isCompleted) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const updatedItems = cart.items.map((item) =>
-      item.id === itemId ? { ...item, isChecked: !item.isChecked } : item
-    );
+    openedSwipeableRef.current?.close();
+    openedSwipeableRef.current = null;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const item = cart.items.find((cartItem) => cartItem.id === itemId);
+    if (!item) return;
+
+    const updatedItem = { ...item, isChecked: !item.isChecked };
+    const remainingItems = cart.items.filter((cartItem) => cartItem.id !== itemId);
+    let updatedItems: typeof cart.items;
+    if (updatedItem.isChecked) {
+      updatedItems = [...remainingItems, updatedItem];
+    } else {
+      const uncheckedItems = remainingItems.filter((cartItem) => !cartItem.isChecked);
+      const checkedItems = remainingItems.filter((cartItem) => cartItem.isChecked);
+      const itemCategory = updatedItem.category || 'Uncategorized';
+      let insertionIndex = -1;
+
+      uncheckedItems.forEach((cartItem, index) => {
+        if ((cartItem.category || 'Uncategorized') === itemCategory) {
+          insertionIndex = index + 1;
+        }
+      });
+      if (insertionIndex === -1) {
+        const categoryOrder = categoryOrderRef.current?.categories || [];
+        const itemCategoryOrder = categoryOrder.indexOf(itemCategory);
+        insertionIndex = uncheckedItems.findIndex((cartItem) => {
+          const category = cartItem.category || 'Uncategorized';
+          const categoryIndex = categoryOrder.indexOf(category);
+          return categoryIndex > itemCategoryOrder;
+        });
+        if (insertionIndex === -1) insertionIndex = uncheckedItems.length;
+      }
+
+      uncheckedItems.splice(insertionIndex, 0, updatedItem);
+      updatedItems = [...uncheckedItems, ...checkedItems];
+    }
+
     const newSpent = updatedItems.reduce((sum, item) => {
       if (item.isChecked) {
         return sum + (item.actualPrice || item.estimatedPrice) * item.quantity;
@@ -88,6 +247,53 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
       return sum;
     }, 0);
     await updateCart({ ...cart, items: updatedItems, totalSpent: newSpent });
+  };
+
+  const handleCheckAll = async (isChecked: boolean) => {
+    if (cart.isCompleted) return;
+    const existingCheckedItems = cart.items.filter((item) => item.isChecked);
+    const uncheckedItems = cart.items.filter((item) => !item.isChecked);
+    const updatedItems = isChecked
+      ? [
+          ...existingCheckedItems,
+          ...uncheckedItems.map((item) => ({ ...item, isChecked: true })),
+        ]
+      : cart.items.map((item) => ({ ...item, isChecked: false }));
+    const totalSpent = updatedItems.reduce((sum, item) => {
+      return sum + (item.isChecked ? (item.actualPrice || item.estimatedPrice) * item.quantity : 0);
+    }, 0);
+    await updateCart({ ...cart, items: updatedItems, totalSpent });
+  };
+
+  const openCartMenu = () => {
+    openedSwipeableRef.current?.close();
+    openedSwipeableRef.current = null;
+    setShowMenu(true);
+  };
+
+  const closeOpenedSwipeable = () => {
+    openedSwipeableRef.current?.close();
+    openedSwipeableRef.current = null;
+  };
+
+  const saveCartEdit = async () => {
+    if (editType === 'name') {
+      const name = editValue.trim();
+      if (!name) {
+        Alert.alert('Invalid name', 'Please enter a cart name.');
+        return;
+      }
+      await updateCart({ ...cart, name });
+    } else if (editType === 'budget') {
+      const rawBudget = editValue.replace(/,/g, '').trim();
+      const budgetValue = Number(rawBudget);
+      if (!rawBudget || !Number.isFinite(budgetValue) || budgetValue < 0) {
+        Alert.alert('Invalid budget', 'Enter a valid budget amount.');
+        return;
+      }
+      await updateCart({ ...cart, budget: budgetValue });
+    }
+    setEditType(null);
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -130,87 +336,38 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     return null;
   };
 
-  const handleCompleteTrip = async () => {
-    Alert.alert('Complete Trip', 'Complete this trip?', [
-      {
-        text: 'Cancel',
-        onPress: () => { },
-        style: 'cancel',
-      },
-      {
-        text: 'Complete',
-        onPress: async () => {
-          const purchasedAt = new Date().toISOString();
-          const storeName = getStoreName(cart.storeId);
-          const tripTotal = cart.items.reduce(
-            (sum, item) =>
-              sum + (item.actualPrice || item.estimatedPrice) * item.quantity,
-            0
-          );
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('Home');
+  };
 
-          const updatedCart = {
-            ...cart,
-            totalSpent: tripTotal,
-            isCompleted: true,
-            completedAt: purchasedAt,
-          };
-
-          console.log(
-            '[CompleteTrip] saving cart',
-            updatedCart.id,
-            'items',
-            updatedCart.items.length,
-            'total',
-            tripTotal
-          );
-          console.log('[CompleteTrip] Sending request...');
-
-          const savedRemote = await persistCompletedCart(updatedCart);
-          if (!savedRemote) {
-            console.log('[CompleteTrip] Mongo cart save failed; keeping active cart');
-            console.log('[CompleteTrip] Database save failed');
-            console.log('[CompleteTrip] Keeping active cart');
-            Alert.alert(
-              'Could not save trip',
-              'The trip was not saved to the database. Check that the backend is running and try Complete Trip again. Your cart was not cleared.'
-            );
-            return;
-          }
-          console.log('[CompleteTrip] Database save successful');
-
-          for (const item of cart.items) {
-            await addPriceRecord(item.name, item.category, item.categoryColor, {
-              storeId: cart.storeId || 'local',
-              storeName,
-              price: item.actualPrice || item.estimatedPrice,
-              date: purchasedAt,
-            });
-          }
-
-          const purchaseMap = useGroceryStore.getState().itemPriceHistory;
-          const savedPurchases = await persistPurchaseHistory(purchaseMap);
-          if (!savedPurchases) {
-            console.log('[CompleteTrip] Mongo price history save failed after cart save');
-          }
-
-          if (cart.storeId) {
-            await addRecentStore(cart.storeId);
-          }
-
-          console.log('[CompleteTrip] Clearing active cart');
-          await updateCart(updatedCart);
-          await Haptics.notificationAsync(
-            Haptics.NotificationFeedbackType.Success
-          );
-          navigation.replace('TripSummary', { cartId });
-        },
-        style: 'default',
-      },
-    ]);
+  const handleMenuAction = (
+    action: 'rename' | 'budget' | 'check' | 'uncheck' | 'complete'
+  ) => {
+    setShowMenu(false);
+    if (action === 'rename') {
+      setEditValue(cart.name);
+      setEditType('name');
+    } else if (action === 'budget') {
+      setEditValue(String(cart.budget));
+      setEditType('budget');
+    } else if (action === 'check') {
+      void handleCheckAll(true);
+    } else if (action === 'uncheck') {
+      void handleCheckAll(false);
+    } else if (action === 'complete') {
+      if (cart.isCompleted) {
+        navigation.navigate('TripSummary', { cartId });
+      } else if (cart.items.length > 0) {
+        setShowTripSummary(true);
+      }
+    }
   };
 
   const handleAddItem = (type: string) => {
-    setShowFABMenu(false);
     if (type === 'manual') {
       navigation.navigate('AddEditItem', { cartId });
     } else if (type === 'voice') {
@@ -220,168 +377,349 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
     }
   };
 
+  const actionBar = !cart.isCompleted ? (
+    <View
+      style={[styles.actionBar, { paddingBottom: Math.max(insets.bottom, SPACING.md) }]}
+      onTouchStart={closeOpenedSwipeable}
+    >
+      <TouchableOpacity
+        style={styles.actionBarButton}
+        onPress={() => handleAddItem('voice')}
+        accessibilityRole="button"
+        accessibilityLabel="Add products using voice input"
+      >
+        <MaterialIcons name="mic" size={26} color={theme.textSecondary} />
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.actionBarButton}
+        onPress={() => handleAddItem('manual')}
+        accessibilityRole="button"
+        accessibilityLabel="Add product manually"
+      >
+        <View style={styles.addButton}>
+          <MaterialIcons name="add" size={30} color={COLORS.white} />
+        </View>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.actionBarButton}
+        onPress={() => handleAddItem('camera')}
+        accessibilityRole="button"
+        accessibilityLabel="Scan a product"
+      >
+        <MaterialIcons name="qr-code-scanner" size={26} color={theme.textSecondary} />
+      </TouchableOpacity>
+    </View>
+  ) : null;
+
   const sections = groupItemsByCategory();
-  const categoryMap = new Map(DEFAULT_CATEGORIES.map((c) => [c.name, c.color]));
+  const formattedDate = new Date(cart.date).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const cartHeader = (
+    <View
+      style={[styles.headerContainer, { paddingTop: insets.top }]}
+      onTouchStart={closeOpenedSwipeable}
+    >
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={handleBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back to dashboard"
+        >
+          <MaterialIcons name="arrow-back" size={26} color={theme.text} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerIconButton}
+          onPress={openCartMenu}
+          accessibilityRole="button"
+          accessibilityLabel="Cart options"
+        >
+          <MaterialIcons name="more-vert" size={26} color={theme.text} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.cartInfo}>
+        <View style={styles.cartInfoText}>
+          <Text style={styles.headerTitle} numberOfLines={1}>{cart.name}</Text>
+          <TouchableOpacity
+            style={styles.storeRow}
+            onPress={() => setShowStoreSheet(true)}
+            disabled={cart.isCompleted}
+            accessibilityRole="button"
+            accessibilityLabel={`Store: ${getStoreName(cart.storeId)}`}
+          >
+            <Text style={styles.storeName}>Store: {getStoreName(cart.storeId)}</Text>
+            {!cart.isCompleted && (
+              <MaterialIcons name="keyboard-arrow-down" size={20} color={theme.textSecondary} />
+            )}
+          </TouchableOpacity>
+          <Text style={styles.dateText}>{formattedDate}</Text>
+        </View>
+      </View>
+    </View>
+  );
+  const budgetSummary = (
+    <View style={styles.summaryContainer} onTouchStart={closeOpenedSwipeable}>
+      <View style={styles.statsContainer}>
+        <View style={styles.statBox}>
+          <Text style={styles.statLabel}>Budget:</Text>
+          <Text style={styles.statValue}>₱{formatPesoAmount(budget)}</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statLabel}>Spent:</Text>
+          <Text style={styles.statValue}>₱{formatPesoAmount(spent)}</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={[styles.statLabel, styles.statRight]}>Remaining:</Text>
+          <Text style={[styles.statValue, styles.statRight, { color: theme.success }]}>
+            ₱{formatPesoAmount(remaining)}
+          </Text>
+        </View>
+      </View>
+      <View
+        style={styles.budgetBar}
+        accessibilityRole="progressbar"
+        accessibilityValue={{ min: 0, max: 100, now: Math.min(percentSpent, 100) }}
+      >
+        <Animated.View
+          style={[
+            styles.budgetProgress,
+            {
+              width: `${Math.min(percentSpent, 100)}%`,
+              backgroundColor: getBarColor(),
+            },
+          ]}
+        />
+      </View>
+    </View>
+  );
+  const tripItemCount = cart.items.length;
+  const budgetDifference = budget - spent;
+  const overBudgetAmount = Math.max(0, spent - budget);
+  const tripBudgetStatus =
+    budgetDifference > 0
+      ? {
+          label: 'Saved',
+          stamp: 'UNDER BUDGET',
+          amount: budgetDifference,
+          color: theme.success,
+        }
+      : overBudgetAmount > 0
+        ? {
+            label: 'Over',
+            stamp: 'OVER BUDGET',
+            amount: overBudgetAmount,
+            color: '#C65300',
+          }
+        : {
+            label: 'Budget Used',
+            stamp: 'ON BUDGET',
+            amount: 0,
+            color: theme.textSecondary,
+          };
+  const menuOptions: {
+    label: string;
+    icon: React.ComponentProps<typeof MaterialIcons>['name'];
+    action: 'rename' | 'budget' | 'check' | 'uncheck' | 'complete';
+  }[] = [
+    { label: 'Rename Cart', icon: 'edit', action: 'rename' },
+    { label: 'Edit Budget', icon: 'attach-money', action: 'budget' },
+    { label: 'Check All', icon: 'check-box', action: 'check' },
+    { label: 'Uncheck All', icon: 'check-box-outline-blank', action: 'uncheck' },
+    { label: 'Complete Trip', icon: 'flag', action: 'complete' },
+  ];
+  const menuHeight = menuOptions.length * 52;
+  const menuTop = Math.min(
+    insets.top + 48,
+    Math.max(insets.top + SPACING.sm, windowHeight - insets.bottom - menuHeight - SPACING.md)
+  );
+  const overlays = (
+    <>
+      <SelectStoreSheet
+        visible={showStoreSheet}
+        cartId={cartId}
+        onClose={() => setShowStoreSheet(false)}
+      />
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <View style={styles.menuBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowMenu(false)}
+            accessibilityLabel="Close cart options"
+          />
+          <View style={[styles.menuCard, { top: menuTop, maxHeight: menuHeight }]}>
+            {menuOptions.map(({ label, icon, action }, index) => (
+              <TouchableOpacity
+                key={action}
+                style={[
+                  styles.menuItem,
+                  index < menuOptions.length - 1 && styles.menuItemDivider,
+                ]}
+                onPress={() => handleMenuAction(action)}
+                accessibilityRole="button"
+              >
+                <MaterialIcons name={icon} size={22} color="#F3F4F6" />
+                <Text style={styles.menuItemText}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        visible={editType !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditType(null)}
+      >
+        <KeyboardAvoidingView
+          style={styles.editBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.editDialog}>
+            <Text style={styles.editTitle}>
+              {editType === 'name' ? 'Rename Cart' : 'Edit Budget'}
+            </Text>
+            <TextInput
+              style={styles.editInput}
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder={editType === 'name' ? 'Cart name' : 'Budget amount'}
+              keyboardType={editType === 'budget' ? 'decimal-pad' : 'default'}
+              autoFocus
+              selectTextOnFocus
+            />
+            <View style={styles.editActions}>
+              <TouchableOpacity
+                style={styles.editAction}
+                onPress={() => setEditType(null)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.editAction}
+                onPress={saveCartEdit}
+              >
+                <Text style={styles.saveText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+      <Modal
+        visible={showTripSummary}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTripSummary(false)}
+      >
+        <View style={styles.tripSummaryBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setShowTripSummary(false)}
+            accessibilityLabel="Close trip summary"
+          />
+          <View style={styles.tripSummaryCard}>
+            <TouchableOpacity
+              style={styles.tripSummaryClose}
+              onPress={() => setShowTripSummary(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close trip summary"
+            >
+              <MaterialIcons name="close" size={23} color={theme.textMuted} />
+            </TouchableOpacity>
+            <Text style={styles.tripSummaryTitle} numberOfLines={1}>
+              {cart.name.toUpperCase()}
+            </Text>
+            <Text style={styles.tripSummaryDate}>{formattedDate}</Text>
+            <View style={styles.tripSummaryRows}>
+              <View style={styles.tripSummaryRow}>
+                <Text style={styles.tripSummaryLabel}>Items</Text>
+                <Text style={styles.tripSummaryValue}>{tripItemCount}</Text>
+              </View>
+              <View style={styles.tripSummaryRow}>
+                <Text style={styles.tripSummaryLabel}>Budget</Text>
+                <Text style={styles.tripSummaryValue}>₱{formatPesoAmount(budget)}</Text>
+              </View>
+              <View style={styles.tripSummaryRow}>
+                <Text style={styles.tripSummaryLabel}>Spent</Text>
+                <Text style={styles.tripSummaryValue}>₱{formatPesoAmount(spent)}</Text>
+              </View>
+            </View>
+            <View style={[styles.tripSummaryRow, styles.tripSummaryBalance]}>
+              <Text style={[styles.tripSummaryStatus, { color: tripBudgetStatus.color }]}>
+                {tripBudgetStatus.label}
+              </Text>
+              <Text style={[styles.tripSummaryStatus, { color: tripBudgetStatus.color }]}>
+                ₱{formatPesoAmount(tripBudgetStatus.amount)}
+              </Text>
+            </View>
+            {budgetDifference !== 0 && (
+              <View style={[styles.budgetStamp, { borderColor: tripBudgetStatus.color }]}>
+                <Text style={[styles.budgetStampText, { color: tripBudgetStatus.color }]}>
+                  {tripBudgetStatus.stamp}
+                </Text>
+              </View>
+            )}
+            <TouchableOpacity
+              style={[styles.finishTripButton, isSavingTrip && styles.disabledButton]}
+              onPress={() => void saveCompletedTrip()}
+              disabled={isSavingTrip}
+              accessibilityRole="button"
+              accessibilityLabel="Finish trip"
+            >
+              <Text style={styles.finishTripText}>
+                {isSavingTrip ? 'Saving trip…' : 'Finish trip'}
+              </Text>
+            </TouchableOpacity>
+            {overBudgetAmount > 0 && (
+              <TouchableOpacity
+                style={styles.reviewCartButton}
+                onPress={() => setShowTripSummary(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Review cart"
+              >
+                <Text style={styles.reviewCartText}>Review cart</Text>
+              </TouchableOpacity>
+            )}
+            <View pointerEvents="none" style={styles.receiptEdge}>
+              {Array.from({ length: 28 }, (_, index) => (
+                <View key={index} style={styles.receiptTooth} />
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
 
   if (cart.items.length === 0) {
     return (
       <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <View style={styles.header}>
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle} numberOfLines={1}>
-                {cart.name}
-              </Text>
-              <TouchableOpacity onPress={() => setShowStoreSheet(true)} disabled={cart.isCompleted}>
-                <Text style={styles.storeName}>{getStoreName(cart.storeId)}</Text>
-              </TouchableOpacity>
-              <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
-            </View>
-          </View>
-        </View>
+        {cartHeader}
+        {budgetSummary}
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Budget Bar */}
-          <View style={styles.budgetSection}>
-            <View style={styles.budgetBar}>
-              <Animated.View
-                style={[
-                  styles.budgetProgress,
-                  {
-                    width: `${Math.min(percentSpent, 100)}%`,
-                    backgroundColor: getBarColor(),
-                  },
-                ]}
-              />
-            </View>
-          </View>
-
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Budget</Text>
-              <Text style={styles.statValue}>₱{formatPesoAmount(budget)}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Spent</Text>
-              <Text style={[styles.statValue, { color: COLORS.danger }]}>
-                ₱{formatPesoAmount(spent)}
-              </Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Left</Text>
-              <Text style={[styles.statValue, { color: COLORS.success }]}>
-                ₱{formatPesoAmount(remaining)}
-              </Text>
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Empty State */}
         <View style={styles.emptyStateContainer}>
-          <MaterialIcons name="shopping-cart" size={64} color={COLORS.textLight} style={styles.emptyIcon} />
-          <Text style={styles.emptyTitle}>No items yet</Text>
-          <Text style={styles.emptySubtitle}>Add your first item to get started</Text>
-          <TouchableOpacity
-            style={styles.emptyButton}
-            onPress={() => handleAddItem('manual')}
-          >
-            <Text style={styles.emptyButtonText}>Add First Item</Text>
-          </TouchableOpacity>
+          <MaterialIcons name="shopping-basket" size={52} color="#B5B5B5" style={styles.emptyIcon} />
+          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Text style={styles.emptySubtitle}>Add items by voice or scan a product.</Text>
         </View>
 
-        {/* Floating Action Menu */}
-        {!cart.isCompleted && (
-          <View style={styles.fabContainer}>
-            {showFABMenu && (
-              <>
-                <TouchableOpacity
-                  style={styles.fabOption}
-                  onPress={() => handleAddItem('manual')}
-                >
-                  <MaterialIcons name="edit" size={24} color={COLORS.white} />
-                  <Text style={styles.fabLabel}>Manually</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.fabOption}
-                  onPress={() => handleAddItem('voice')}
-                >
-                  <MaterialIcons name="mic" size={24} color={COLORS.white} />
-                  <Text style={styles.fabLabel}>Voice</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.fabOption}
-                  onPress={() => handleAddItem('camera')}
-                >
-                  <MaterialIcons name="camera-alt" size={24} color={COLORS.white} />
-                  <Text style={styles.fabLabel}>Scan</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            <TouchableOpacity
-              style={styles.fab}
-              onPress={() => setShowFABMenu(!showFABMenu)}
-            >
-              <Text style={styles.fabText}>{showFABMenu ? '✕' : '+'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {actionBar}
+        {overlays}
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.headerContainer}>
-        <View style={styles.header}>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {cart.name}
-            </Text>
-            <TouchableOpacity onPress={() => setShowStoreSheet(true)} disabled={cart.isCompleted}>
-              <Text style={styles.storeName}>{getStoreName(cart.storeId)}</Text>
-            </TouchableOpacity>
-            <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Budget Bar */}
-      <View style={styles.budgetSection}>
-        <View style={styles.budgetBar}>
-          <Animated.View
-            style={[
-              styles.budgetProgress,
-              {
-                width: `${Math.min(percentSpent, 100)}%`,
-                backgroundColor: getBarColor(),
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.budgetPercentage}>{Math.round(percentSpent)}%</Text>
-      </View>
-
-      {/* Stats */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>Budget</Text>
-          <Text style={styles.statValue}>₱{formatPesoAmount(budget)}</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>Spent</Text>
-          <Text style={[styles.statValue, { color: COLORS.danger }]}>
-            ₱{formatPesoAmount(spent)}
-          </Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>Left</Text>
-          <Text style={[styles.statValue, { color: COLORS.success }]}>
-            ₱{formatPesoAmount(remaining)}
-          </Text>
-        </View>
-      </View>
+      {cartHeader}
+      {budgetSummary}
 
       {/* Items List */}
       <SectionList
@@ -390,18 +728,65 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         scrollEnabled={true}
         style={styles.content}
         contentContainerStyle={{ paddingBottom: SPACING.xl * 3 }}
-        renderSectionHeader={({ section: { title } }) => (
-          <View
-            style={[
-              styles.categoryHeader,
-              { backgroundColor: categoryMap.get(title) || COLORS.accent },
-            ]}
-          >
-            <Text style={styles.categoryTitle}>{title}</Text>
+        renderSectionHeader={({ section }) => (
+          <View style={styles.categoryHeader} onTouchStart={closeOpenedSwipeable}>
+            <Text style={styles.categoryTitle}>
+              {section.isCheckedSection ? 'CHECKED ITEMS' : section.title}
+            </Text>
+            <Text style={styles.categoryCount}>({section.data.length})</Text>
           </View>
         )}
         renderItem={({ item }) => (
-          <View style={styles.itemRow}>
+          <Swipeable
+            friction={2}
+            rightThreshold={40}
+            overshootRight={false}
+            enabled={!cart.isCompleted}
+            onSwipeableOpen={(direction, swipeable) => {
+              if (direction !== 'left') return;
+              if (
+                openedSwipeableRef.current &&
+                openedSwipeableRef.current !== swipeable
+              ) {
+                openedSwipeableRef.current.close();
+              }
+              openedSwipeableRef.current = swipeable;
+            }}
+            onSwipeableClose={(_direction, swipeable) => {
+              if (openedSwipeableRef.current === swipeable) {
+                openedSwipeableRef.current = null;
+              }
+            }}
+            renderRightActions={() => (
+              <View style={styles.swipeActions}>
+                <TouchableOpacity
+                  style={[styles.swipeAction, styles.editSwipeAction]}
+                  onPress={() => {
+                    closeOpenedSwipeable();
+                    navigation.navigate('AddEditItem', { cartId, itemId: item.id });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${item.name}`}
+                >
+                  <MaterialIcons name="edit" size={22} color={COLORS.white} />
+                  <Text style={styles.swipeActionText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.swipeAction, styles.deleteSwipeAction]}
+                  onPress={() => {
+                    closeOpenedSwipeable();
+                    void handleDeleteItem(item.id);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete ${item.name}`}
+                >
+                  <MaterialIcons name="delete-outline" size={22} color={COLORS.white} />
+                  <Text style={styles.swipeActionText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          >
+          <View style={styles.itemRow} onTouchStart={closeOpenedSwipeable}>
             <TouchableOpacity
               style={styles.checkbox}
               onPress={() => handleCheckItem(item.id)}
@@ -420,6 +805,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
             <View style={styles.itemInfo}>
               <TouchableOpacity
                 onLongPress={() => {
+                  closeOpenedSwipeable();
                   navigation.navigate('ItemDetail', { itemId: item.id, cartId });
                 }}
                 activeOpacity={0.8}
@@ -429,11 +815,17 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                 >
                   {item.name} ({item.quantity} {item.unit})
                 </Text>
+                {item.isChecked && (
+                  <Text style={styles.itemCategoryLabel}>
+                    {item.category || 'Uncategorized'}
+                  </Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.itemMetaRow}>
                 <TouchableOpacity
                   onPress={() => {
+                    closeOpenedSwipeable();
                     navigation.navigate('StoreComparison', { itemId: item.id, cartId });
                   }}
                   style={styles.compareLink}
@@ -454,7 +846,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                 if (diff > 0.01) {
                   return (
                     <View style={[styles.trendBadge, { backgroundColor: '#FEE2E2' }]}>
-                      <Text style={[styles.trendBadgeText, { color: COLORS.danger }]}>
+                      <Text style={[styles.trendBadgeText, { color: theme.danger }]}>
                         ↑ ₱{formatPesoAmount(absDiff)} more than last time
                       </Text>
                     </View>
@@ -462,7 +854,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                 } else if (diff < -0.01) {
                   return (
                     <View style={[styles.trendBadge, { backgroundColor: '#DCFCE7' }]}>
-                      <Text style={[styles.trendBadgeText, { color: COLORS.success }]}>
+                      <Text style={[styles.trendBadgeText, { color: theme.success }]}>
                         ↓ ₱{formatPesoAmount(absDiff)} cheaper than last time
                       </Text>
                     </View>
@@ -490,199 +882,139 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                   (item.actualPrice || item.estimatedPrice) * item.quantity
                 )}
               </Text>
-              {!cart.isCompleted && (
-                <>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() =>
-                      navigation.navigate('AddEditItem', { cartId, itemId: item.id })
-                    }
-                  >
-                    <MaterialIcons name="edit" size={18} color="#6B7280" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => handleDeleteItem(item.id)}
-                  >
-                    <MaterialIcons name="delete-outline" size={18} color="#E84040" />
-                  </TouchableOpacity>
-                </>
-              )}
             </View>
           </View>
+          </Swipeable>
         )}
       />
 
-      {/* Complete Trip / View Recap Button */}
-      <TouchableOpacity
-        style={[
-          styles.completeButton,
-          cart.isCompleted && { backgroundColor: '#6B7280' }
-        ]}
-        onPress={
-          cart.isCompleted
-            ? () => navigation.navigate('TripSummary', { cartId })
-            : handleCompleteTrip
-        }
-      >
-        <Text style={styles.completeButtonText}>
-          {cart.isCompleted ? 'View Summary' : 'Complete Trip'}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Floating Action Menu */}
-      {!cart.isCompleted && (
-        <View style={styles.fabContainer}>
-          {showFABMenu && (
-            <>
-              <TouchableOpacity
-                style={styles.fabOption}
-                onPress={() => handleAddItem('manual')}
-              >
-                <MaterialIcons name="edit" size={24} color={COLORS.white} />
-                <Text style={styles.fabLabel}>Manually</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.fabOption}
-                onPress={() => handleAddItem('voice')}
-              >
-                <MaterialIcons name="mic" size={24} color={COLORS.white} />
-                <Text style={styles.fabLabel}>Voice</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.fabOption}
-                onPress={() => handleAddItem('camera')}
-              >
-                <MaterialIcons name="camera-alt" size={24} color={COLORS.white} />
-                <Text style={styles.fabLabel}>Scan</Text>
-              </TouchableOpacity>
-            </>
-          )}
-          <TouchableOpacity
-            style={styles.fab}
-            onPress={() => setShowFABMenu(!showFABMenu)}
-          >
-            <Text style={styles.fabText}>{showFABMenu ? '✕' : '+'}</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {actionBar}
 
       {/* Store Selection Modal */}
-      <SelectStoreSheet
-        visible={showStoreSheet}
-        cartId={cartId}
-        onClose={() => setShowStoreSheet(false)}
-      />
+      {overlays}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.surface,
   },
   headerContainer: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    backgroundColor: theme.surface,
+    paddingHorizontal: SPACING.lg,
   },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    height: 48,
   },
-  headerCenter: {
-    flex: 1,
+  headerIconButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  backButton: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
+  cartInfo: {
+    minHeight: 140,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.md,
+    paddingBottom: SPACING.md,
+  },
+  cartInfoText: {
+    flex: 1,
+    minWidth: 0,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 34,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
+  },
+  storeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: SPACING.xs,
   },
   storeName: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textLight,
-    marginTop: 2,
+    fontSize: 16,
+    fontWeight: '400',
+    color: theme.textSecondary,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '400',
-    color: COLORS.textLight,
-    marginTop: 4,
+    color: theme.textSecondary,
+    marginTop: SPACING.xs,
   },
-  placeholder: {
-    width: 50,
-  },
-  budgetSection: {
+  summaryContainer: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
-    gap: SPACING.md,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
+    backgroundColor: theme.surface,
   },
   budgetBar: {
-    height: 12,
-    backgroundColor: COLORS.border,
-    borderRadius: 6,
+    height: 9,
+    backgroundColor: theme.border,
+    borderRadius: 5,
     overflow: 'hidden',
   },
   budgetProgress: {
     height: '100%',
     borderRadius: 6,
   },
-  budgetPercentage: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.textLight,
-    textAlign: 'right',
-  },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
-    gap: SPACING.md,
+    alignItems: 'center',
+    marginBottom: SPACING.md,
   },
   statBox: {
     flex: 1,
-    padding: SPACING.md,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    alignItems: 'center',
+    minWidth: 0,
+    alignItems: 'flex-start',
+  },
+  statRight: {
+    textAlign: 'right',
+    alignSelf: 'flex-end',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
-    color: COLORS.textLight,
-    marginBottom: SPACING.xs,
+    color: theme.textSecondary,
+    marginBottom: 4,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
   },
   content: {
     flex: 1,
   },
   categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    marginTop: SPACING.md,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.sm,
+    marginHorizontal: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
   },
   categoryTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '500',
+    color: theme.textSecondary,
     textTransform: 'uppercase',
+  },
+  categoryCount: {
+    marginLeft: SPACING.xs,
+    fontSize: 12,
+    color: theme.textMuted,
   },
   itemRow: {
     flexDirection: 'row',
@@ -690,7 +1022,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: theme.border,
+    backgroundColor: theme.surface,
     gap: SPACING.md,
   },
   checkbox: {
@@ -703,17 +1036,17 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderWidth: 2,
-    borderColor: COLORS.textLight,
-    borderRadius: 6,
+    borderColor: theme.textMuted,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: COLORS.success,
-    borderColor: COLORS.success,
+    backgroundColor: theme.success,
+    borderColor: theme.success,
   },
   checkmark: {
-    color: COLORS.white,
+    color: theme.headerText,
     fontSize: 14,
     fontWeight: '700',
   },
@@ -723,16 +1056,21 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
+    marginBottom: SPACING.xs,
+  },
+  itemCategoryLabel: {
+    fontSize: 11,
+    color: theme.textSecondary,
     marginBottom: SPACING.xs,
   },
   lastPrice: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   strikethrough: {
     textDecorationLine: 'line-through',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   itemRight: {
     flexDirection: 'row',
@@ -742,112 +1080,314 @@ const styles = StyleSheet.create({
   itemPrice: {
     fontSize: 14,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
   },
-  actionButton: {
-    padding: 6,
+  swipeActions: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
   },
-  fabContainer: {
-    position: 'absolute',
-    bottom: 76,
-    right: SPACING.lg,
-    gap: SPACING.md,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
+  swipeAction: {
+    width: 76,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    gap: 4,
   },
-  fabText: {
-    fontSize: 28,
-    fontWeight: '700',
+  editSwipeAction: {
+    backgroundColor: '#009B69',
+  },
+  deleteSwipeAction: {
+    backgroundColor: '#F44343',
+  },
+  swipeActionText: {
     color: COLORS.white,
-  },
-  fabOption: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.accent,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  fabIcon: {
-    fontSize: 24,
-  },
-  fabLabel: {
-    position: 'absolute',
-    bottom: -24,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
-    color: COLORS.text,
-    width: 60,
-    textAlign: 'center',
   },
-  completeButton: {
-    marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
-    paddingVertical: SPACING.md,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+  },
+  menuCard: {
+    position: 'absolute',
+    right: SPACING.md,
+    width: 250,
+    maxWidth: '80%',
+    backgroundColor: '#2B2B2D',
+    borderRadius: 4,
+    overflow: 'hidden',
+    elevation: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+  },
+  menuItem: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+  },
+  menuItemDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#454547',
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#F3F4F6',
+  },
+  editBackdrop: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    padding: SPACING.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
-  completeButtonText: {
+  editDialog: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 16,
+    padding: SPACING.lg,
+    backgroundColor: theme.surface,
+  },
+  editTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: theme.text,
+    marginBottom: SPACING.md,
+  },
+  editInput: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 8,
+    paddingHorizontal: SPACING.md,
+    color: theme.text,
+    backgroundColor: theme.inputBackground,
+    fontSize: 16,
+  },
+  editActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.lg,
+    gap: SPACING.lg,
+  },
+  editAction: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.sm,
+  },
+  cancelText: {
+    color: theme.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveText: {
+    color: theme.primary,
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.white,
+  },
+  tripSummaryBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.48)',
+  },
+  tripSummaryCard: {
+    position: 'relative',
+    width: '100%',
+    maxWidth: 430,
+    borderRadius: 22,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl * 1.4,
+    paddingBottom: SPACING.lg,
+    backgroundColor: theme.surface,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+  },
+  tripSummaryClose: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  tripSummaryTitle: {
+    marginHorizontal: 36,
+    textAlign: 'center',
+    fontSize: 16,
+    letterSpacing: 2,
+    fontWeight: '700',
+    color: theme.text,
+  },
+  tripSummaryDate: {
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.lg,
+    textAlign: 'center',
+    color: theme.textSecondary,
+    fontSize: 14,
+  },
+  tripSummaryRows: {
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  tripSummaryRow: {
+    minHeight: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  tripSummaryLabel: {
+    fontSize: 15,
+    color: theme.textSecondary,
+  },
+  tripSummaryValue: {
+    fontSize: 15,
+    color: theme.text,
+    fontWeight: '500',
+  },
+  tripSummaryBalance: {
+    paddingTop: SPACING.md,
+  },
+  tripSummaryStatus: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  budgetStamp: {
+    alignSelf: 'center',
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderWidth: 2,
+    borderRadius: 9,
+    transform: [{ rotate: '-9deg' }],
+  },
+  budgetStampText: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  finishTripButton: {
+    minHeight: 54,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 11,
+    backgroundColor: theme.success,
+  },
+  reviewCartButton: {
+    minHeight: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+    borderWidth: 1,
+    borderColor: theme.success,
+    borderRadius: 11,
+    backgroundColor: theme.surface,
+  },
+  reviewCartText: {
+    color: theme.success,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  receiptEdge: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: -7,
+    height: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  receiptTooth: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: theme.surface,
+  },
+  finishTripText: {
+    color: theme.headerText,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    opacity: 0.65,
+  },
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
+    backgroundColor: theme.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+  },
+  actionBarButton: {
+    flex: 1,
+    minHeight: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButton: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: theme.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xl * 2,
   },
   emptyIcon: {
-    fontSize: 64,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: SPACING.sm,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: COLORS.textLight,
+    fontSize: 16,
+    color: theme.textSecondary,
     textAlign: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: 0,
   },
   emptyButton: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.primary,
   },
   emptyButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.white,
+    color: theme.headerText,
   },
   trendBadge: {
     alignSelf: 'flex-start',
@@ -871,7 +1411,7 @@ const styles = StyleSheet.create({
   },
   compareLinkText: {
     fontSize: 11,
-    color: COLORS.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   compareRow: {

@@ -517,7 +517,9 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
   getSettings: async () => {
     try {
       const settingsJson = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-      const settings = settingsJson ? JSON.parse(settingsJson) : DEFAULT_SETTINGS;
+      const settings = settingsJson
+        ? { ...DEFAULT_SETTINGS, ...JSON.parse(settingsJson) }
+        : DEFAULT_SETTINGS;
       if (!settingsJson) {
         await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(DEFAULT_SETTINGS));
       }

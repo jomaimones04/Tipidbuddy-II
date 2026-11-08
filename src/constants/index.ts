@@ -221,6 +221,7 @@ export const DEFAULT_SETTINGS = {
   notificationsEnabled: true,
   isGuest: true,
   familyMembers: [],
+  themeMode: 'light' as const,
 };
 
 // Fonts

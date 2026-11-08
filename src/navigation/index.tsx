@@ -1,5 +1,10 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme as NavigationLightTheme,
+  DarkTheme as NavigationDarkTheme,
+  getFocusedRouteNameFromRoute,
+} from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Platform } from 'react-native';
@@ -26,20 +31,20 @@ import { ExportModal } from '@screens/ExportModal';
 import { TemplatesScreen } from '@screens/TemplatesScreen';
 import { ComingSoonScreen } from '@screens/ComingSoonScreen';
 
-import { COLORS } from '@constants/index';
+import { useTheme } from '../hooks/useTheme';
 import type { RootStackParamList, TabParamList } from '../types/index';
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 // Consistent header configuration used across all screens
-const getHeaderConfig = (title: string) => ({
+const getHeaderConfig = (title: string, theme: ReturnType<typeof useTheme>) => ({
   headerShown: true,
   title,
   headerLeft: () => null,
   headerBackVisible: false,
   headerStyle: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.header,
     height: Platform.OS === 'android' ? 90 : 90,
     elevation: 4,
     shadowColor: '#000',
@@ -47,11 +52,11 @@ const getHeaderConfig = (title: string) => ({
     shadowOpacity: 0.25,
     shadowRadius: 3,
   },
-  headerTintColor: COLORS.white,
+  headerTintColor: theme.headerText,
   headerTitleStyle: {
     fontSize: 26,
     fontWeight: '700' as const,
-    color: COLORS.white,
+    color: theme.headerText,
     marginLeft: Platform.OS === 'android' ? -10 : 0,
   },
   headerTitleAlign: 'left' as const,
@@ -71,6 +76,7 @@ const fadeScaleOptions = {
 };
 
 const HomeTabStack = () => {
+  const theme = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{
@@ -81,13 +87,13 @@ const HomeTabStack = () => {
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={getHeaderConfig('My Carts')}
+        options={getHeaderConfig('My Carts', theme)}
       />
       <Stack.Screen
         name="CartDetail"
         component={CartDetailScreen}
         options={{
-          ...getHeaderConfig('Cart Details'),
+          headerShown: false,
           ...slideFromRightOptions,
         }}
       />
@@ -95,7 +101,7 @@ const HomeTabStack = () => {
         name="CartForm"
         component={CartFormScreen}
         options={{
-          ...getHeaderConfig('Create Cart'),
+          ...getHeaderConfig('Create Cart', theme),
           ...slideFromBottomOptions,
         }}
       />
@@ -103,15 +109,18 @@ const HomeTabStack = () => {
         name="AddEditItem"
         component={AddEditItemScreen}
         options={{
-          ...getHeaderConfig('Add/Edit Item'),
-          ...slideFromBottomOptions,
+          headerShown: false,
+          presentation: 'transparentModal',
+          cardOverlayEnabled: true,
+          cardStyle: { backgroundColor: 'transparent' },
+          ...fadeScaleOptions,
         }}
       />
       <Stack.Screen
         name="VoiceInput"
         component={VoiceInputModal}
         options={{
-          ...getHeaderConfig('Voice Input'),
+          headerShown: false,
           ...slideFromBottomOptions,
         }}
       />
@@ -119,7 +128,7 @@ const HomeTabStack = () => {
         name="CameraScanner"
         component={CameraScannerScreen}
         options={{
-          ...getHeaderConfig('Scan Label'),
+          ...getHeaderConfig('Scan Label', theme),
           ...slideFromRightOptions,
         }}
       />
@@ -135,7 +144,7 @@ const HomeTabStack = () => {
         name="StoreComparison"
         component={StoreComparisonScreen}
         options={{
-          ...getHeaderConfig('Store Prices'),
+          ...getHeaderConfig('Store Prices', theme),
           ...slideFromRightOptions,
         }}
       />
@@ -159,7 +168,7 @@ const HomeTabStack = () => {
         name="SpendingRecap"
         component={SpendingRecapScreen}
         options={{
-          ...getHeaderConfig('Trip Summary'),
+          ...getHeaderConfig('Trip Summary', theme),
           ...fadeScaleOptions,
         }}
       />
@@ -167,7 +176,7 @@ const HomeTabStack = () => {
         name="Export"
         component={ExportModal}
         options={{
-          ...getHeaderConfig('Export Cart'),
+          ...getHeaderConfig('Export Cart', theme),
           ...slideFromBottomOptions,
         }}
       />
@@ -183,8 +192,9 @@ const HomeTabStack = () => {
   );
 };
 
-const SettingsTabStack = () => (
-  <Stack.Navigator
+const SettingsTabStack = () => {
+  const theme = useTheme();
+  return <Stack.Navigator
     screenOptions={{
       headerShown: true,
       ...slideFromRightOptions,
@@ -193,13 +203,13 @@ const SettingsTabStack = () => (
     <Stack.Screen
       name="SettingsMain"
       component={SettingsScreen}
-      options={getHeaderConfig('Account')}
+      options={getHeaderConfig('Account', theme)}
     />
     <Stack.Screen
       name="CategoryManager"
       component={CategoryManagerScreen}
       options={{
-        ...getHeaderConfig('Manage Categories'),
+        ...getHeaderConfig('Manage Categories', theme),
         ...slideFromRightOptions,
       }}
     />
@@ -207,15 +217,16 @@ const SettingsTabStack = () => (
       name="FamilySharing"
       component={FamilySharingScreen}
       options={{
-        ...getHeaderConfig('Family Sharing'),
+        ...getHeaderConfig('Family Sharing', theme),
         ...slideFromRightOptions,
       }}
     />
-  </Stack.Navigator>
-);
+  </Stack.Navigator>;
+};
 
-const InsightsTabStack = () => (
-  <Stack.Navigator
+const InsightsTabStack = () => {
+  const theme = useTheme();
+  return <Stack.Navigator
     screenOptions={{
       headerShown: true,
       ...slideFromRightOptions,
@@ -225,8 +236,7 @@ const InsightsTabStack = () => (
       name="InsightsMain"
       component={InsightsScreen}
       options={{
-        ...getHeaderConfig('Insights'),
-        statusBarStyle: 'light',
+        ...getHeaderConfig('Insights', theme),
       }}
     />
     <Stack.Screen
@@ -241,7 +251,7 @@ const InsightsTabStack = () => (
       name="SpendingRecap"
       component={SpendingRecapScreen}
       options={{
-        ...getHeaderConfig('Trip Summary'),
+        ...getHeaderConfig('Trip Summary', theme),
         ...fadeScaleOptions,
       }}
     />
@@ -253,11 +263,12 @@ const InsightsTabStack = () => (
         ...slideFromRightOptions,
       }}
     />
-  </Stack.Navigator>
-);
+  </Stack.Navigator>;
+};
 
-const TemplatesTabStack = () => (
-  <Stack.Navigator
+const TemplatesTabStack = () => {
+  const theme = useTheme();
+  return <Stack.Navigator
     screenOptions={{
       headerShown: true,
       ...slideFromRightOptions,
@@ -266,19 +277,20 @@ const TemplatesTabStack = () => (
     <Stack.Screen
       name="Templates"
       component={TemplatesScreen}
-      options={getHeaderConfig('Templates')}
+      options={getHeaderConfig('Templates', theme)}
     />
-  </Stack.Navigator>
-);
+  </Stack.Navigator>;
+};
 
 const TabNavigator = () => {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary, // Green for active
-        tabBarInactiveTintColor: '#999999', // Gray for inactive (not green)
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textMuted,
         tabBarLabelStyle: {
           fontSize: 13, // Increased from 12
           fontWeight: '600',
@@ -289,8 +301,8 @@ const TabNavigator = () => {
         },
         tabBarStyle: {
           borderTopWidth: 1,
-          borderTopColor: COLORS.border,
-          backgroundColor: COLORS.white,
+          borderTopColor: theme.tabBarBorder,
+          backgroundColor: theme.tabBar,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 8,
@@ -299,8 +311,13 @@ const TabNavigator = () => {
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.15,
           shadowRadius: 4,
+          display:
+            route.name === 'HomeTab' &&
+            (getFocusedRouteNameFromRoute(route) ?? 'Home') !== 'Home'
+              ? 'none'
+              : 'flex',
         },
-      }}
+      })}
     >
       <Tab.Screen
         name="HomeTab"
@@ -334,8 +351,22 @@ const TabNavigator = () => {
 };
 
 export default function NavigationRoot() {
+  const theme = useTheme();
+  const baseTheme = theme.isDark ? NavigationDarkTheme : NavigationLightTheme;
+  const navigationTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.surface,
+      text: theme.text,
+      border: theme.border,
+      notification: theme.accent,
+    },
+  };
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <TabNavigator />
     </NavigationContainer>
   );

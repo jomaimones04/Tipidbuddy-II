@@ -10,6 +10,7 @@ export interface GroceryItem {
   isChecked: boolean;
   category: string;
   categoryColor: string;
+  imageUrl?: string;
   storeId?: string;
   barcode?: string;
   barcodeType?: string;
@@ -97,6 +98,7 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   isGuest: boolean;
   familyMembers: FamilyMember[];
+  themeMode: 'light' | 'dark' | 'system';
 }
 
 export type RootStackParamList = {

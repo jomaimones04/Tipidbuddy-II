@@ -31,7 +31,7 @@ export function detectCategory(itemName: string): string {
     return 'Others';
   }
 
-  const normalized = itemName.toLowerCase().trim();
+  const normalized = itemName.toLowerCase().trim().replace(/\s+/g, ' ');
   if (normalized === '') {
     return 'Others';
   }

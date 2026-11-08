@@ -13,6 +13,7 @@ import { useGroceryStore } from '@store/index';
 import { COLORS, SPACING } from '@constants/index';
 import { formatPesoAmount } from '@utils/index';
 import type { Cart } from '../types/index';
+import { useTheme } from '../hooks/useTheme';
 
 type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
 
@@ -29,6 +30,8 @@ const getWeekMessageIndex = (startDate: Date) => {
 
 export const InsightsScreen = ({ navigation }: any) => {
   const { carts, stores, deleteCart } = useGroceryStore();
+  const theme = useTheme();
+  const styles = React.useMemo(() => getStyles(theme), [theme]);
   const [timeRange, setTimeRange] = useState<'7days' | 'month'>('7days');
   const [dateOffset, setDateOffset] = useState(0);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -251,7 +254,7 @@ export const InsightsScreen = ({ navigation }: any) => {
                 onPress={showSortOptions}
                 activeOpacity={0.7}
               >
-                <Ionicons name="filter-outline" size={14} color={COLORS.textLight} />
+                <Ionicons name="filter-outline" size={14} color={theme.textSecondary} />
                 <Text style={styles.filterText}>{sortLabels[sortBy]}</Text>
               </TouchableOpacity>
             </View>
@@ -364,7 +367,7 @@ export const InsightsScreen = ({ navigation }: any) => {
                       <Ionicons
                         name="checkmark"
                         size={20}
-                        color={COLORS.primary}
+                        color={theme.primary}
                         style={styles.sortSheetCheckmark}
                       />
                     )}
@@ -388,10 +391,10 @@ export const InsightsScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.background,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -410,20 +413,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
   },
   toggleButtonActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: theme.primary,
+    borderColor: theme.primary,
   },
   toggleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   toggleTextActive: {
-    color: COLORS.white,
+    color: theme.headerText,
   },
   dateRangeContainer: {
     flexDirection: 'row',
@@ -436,13 +439,13 @@ const styles = StyleSheet.create({
   arrowButton: {
     fontSize: 22,
     fontWeight: '300',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
     paddingHorizontal: SPACING.sm,
   },
   dateRangeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
     minWidth: 140,
     textAlign: 'center',
   },
@@ -461,7 +464,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.xl,
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.surface,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -472,7 +475,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
     textAlign: 'center',
     marginBottom: SPACING.sm,
     letterSpacing: 0.8,
@@ -480,21 +483,21 @@ const styles = StyleSheet.create({
   summaryAmount: {
     fontSize: 36,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
     textAlign: 'center',
     marginBottom: SPACING.md,
   },
   savedText: {
     fontSize: 13,
     fontWeight: '500',
-    color: COLORS.success,
+    color: theme.success,
     textAlign: 'center',
     marginBottom: SPACING.sm,
     lineHeight: 20,
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: theme.border,
     marginVertical: SPACING.md,
   },
   summaryFooter: {
@@ -505,11 +508,11 @@ const styles = StyleSheet.create({
   summaryFooterText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
     flex: 1,
   },
   dot: {
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   seeRecapLink: {
     fontSize: 12,
@@ -527,7 +530,7 @@ const styles = StyleSheet.create({
   recentCartsTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
   },
   filterButton: {
     flexDirection: 'row',
@@ -537,13 +540,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
   },
   filterText: {
     fontSize: 13,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   sortSheetOverlay: {
     flex: 1,
@@ -552,21 +555,25 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
   sortSheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   sortSheetWrapper: {
     gap: SPACING.sm,
   },
   sortSheetOptionsBlock: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: theme.card,
     borderRadius: 14,
     overflow: 'hidden',
   },
   sortSheetTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: theme.text,
     textAlign: 'center',
     paddingVertical: SPACING.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -591,7 +598,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sortSheetOptionTextSelected: {
-    color: COLORS.primary,
+    color: theme.primary,
     fontWeight: '600',
   },
   sortSheetCheckmark: {
@@ -599,7 +606,7 @@ const styles = StyleSheet.create({
     right: SPACING.lg,
   },
   sortSheetCancelBlock: {
-    backgroundColor: '#2C2C2E',
+    backgroundColor: theme.card,
     borderRadius: 14,
     overflow: 'hidden',
   },
@@ -610,17 +617,17 @@ const styles = StyleSheet.create({
   sortSheetCancelText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: theme.primary,
   },
   cartCard: {
     marginHorizontal: SPACING.lg,
     marginBottom: SPACING.md,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white,
+    backgroundColor: theme.surface,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: theme.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -636,13 +643,13 @@ const styles = StyleSheet.create({
   cartName: {
     fontSize: 15,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
     flex: 1,
     marginRight: SPACING.sm,
   },
   cartDate: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   cartSubHeader: {
     flexDirection: 'row',
@@ -653,7 +660,7 @@ const styles = StyleSheet.create({
   storeName: {
     fontSize: 12,
     fontWeight: '500',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
     flex: 1,
   },
   moreButton: {
@@ -661,7 +668,7 @@ const styles = StyleSheet.create({
   },
   moreIcon: {
     fontSize: 18,
-    color: COLORS.textLight,
+    color: theme.textSecondary,
     fontWeight: '700',
   },
   progressBarContainer: {
@@ -669,7 +676,7 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     height: 4,
-    backgroundColor: COLORS.border,
+    backgroundColor: theme.border,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -685,12 +692,12 @@ const styles = StyleSheet.create({
   spentText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
   },
   itemsText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textLight,
+    color: theme.textSecondary,
   },
   emptyStateContainer: {
     alignItems: 'center',
@@ -704,6 +711,6 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: COLORS.text,
+    color: theme.text,
   },
 });

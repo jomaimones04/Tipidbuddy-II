@@ -20,7 +20,7 @@ export const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'bacon', 'burger patty', 'kikiam'
   ],
   'Gulay (Vegetables)': [
-    'kangkong', 'water spinach', 'sitaw', 'string beans', 'ampalaya', 'bitter gourd', 'talong', 'eggplant',
+    'vegetable', 'vegetables', 'kangkong', 'water spinach', 'sitaw', 'string beans', 'ampalaya', 'bitter gourd', 'talong', 'eggplant',
     'okra', 'kamote', 'sweet potato', 'kamote tops', 'patola', 'upo', 'bottle gourd', 'sayote', 'chayote',
     'kalabasa', 'squash', 'repolyo', 'cabbage', 'pechay', 'bok choy', 'spinach', 'carrots', 'karot',
     'sibuyas', 'onion', 'red onion', 'white onion', 'bawang', 'garlic', 'luya', 'ginger', 'sili',

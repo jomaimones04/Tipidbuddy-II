@@ -19,6 +19,22 @@ describe('Category Detector', () => {
     expect(detectCategory('San Miguel Light')).toBe('Inumin (Beverages)');
   });
 
+  test('should detect common English item names despite case and extra spaces', () => {
+    expect(detectCategory('  RICE  ')).toBe('Bigas at Butil (Rice & Grains)');
+    expect(detectCategory('Bigas')).toBe('Bigas at Butil (Rice & Grains)');
+    expect(detectCategory('CHICKEN   BREAST')).toBe(
+      'Karne at Isda (Meat, Poultry & Seafood)'
+    );
+    expect(detectCategory('Pork')).toBe('Karne at Isda (Meat, Poultry & Seafood)');
+    expect(detectCategory('Beef')).toBe('Karne at Isda (Meat, Poultry & Seafood)');
+    expect(detectCategory('Fish')).toBe('Karne at Isda (Meat, Poultry & Seafood)');
+    expect(detectCategory('Tomato')).toBe('Gulay (Vegetables)');
+    expect(detectCategory('Vegetables')).toBe('Gulay (Vegetables)');
+    expect(detectCategory('Apple')).toBe('Prutas (Fruits)');
+    expect(detectCategory('Banana')).toBe('Prutas (Fruits)');
+    expect(detectCategory('Cooking   Oil')).toBe('Luto (Cooking Essentials)');
+  });
+
   test('should categorize Nature Spring barcode product names as beverages', () => {
     expect(detectCategory('Nature Spring 350ml')).toBe('Inumin (Beverages)');
     expect(detectCategory("Nature's Spring Purified Water")).toBe('Inumin (Beverages)');

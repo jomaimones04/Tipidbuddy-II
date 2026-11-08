@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity } from 'react-native';
 import { useGroceryStore } from '@store/index';
 import { COLORS, SPACING } from '@constants/index';
+import { useTheme } from '../hooks/useTheme';
 
 export const SettingsScreen = () => {
   const { settings, updateSettings } = useGroceryStore();
+  const theme = useTheme();
+  const styles = React.useMemo(() => getStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>
@@ -33,6 +36,26 @@ export const SettingsScreen = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Appearance</Text>
+          {(['light', 'dark'] as const).map((mode) => (
+            <TouchableOpacity
+              key={mode}
+              style={styles.themeOption}
+              onPress={() => updateSettings({ themeMode: mode })}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: settings.themeMode === mode }}
+            >
+              <Text style={styles.settingLabel}>
+                {mode === 'light' ? 'Light Mode' : 'Dark Mode'}
+              </Text>
+              <View style={styles.radioOuter}>
+                {settings.themeMode === mode && <View style={styles.radioInner} />}
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           {settings.isGuest && (
             <Text style={styles.guestBadge}>Guest Mode</Text>
@@ -48,23 +71,14 @@ export const SettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    flex: 1,
-    paddingVertical: SPACING.lg,
-  },
-  section: {
-    marginBottom: SPACING.xl,
-    paddingHorizontal: SPACING.lg,
-  },
+const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.background },
+  content: { flex: 1, paddingVertical: SPACING.lg },
+  section: { marginBottom: SPACING.xl, paddingHorizontal: SPACING.lg },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.text,
+    color: theme.text,
     marginBottom: SPACING.md,
   },
   settingItem: {
@@ -73,18 +87,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: theme.border,
   },
-  settingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+  themeOption: {
+    minHeight: 52,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
   },
-  settingValue: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginTop: SPACING.xs,
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: theme.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: theme.primary,
+  },
+  settingLabel: { fontSize: 14, fontWeight: '600', color: theme.text },
+  settingValue: { fontSize: 12, color: theme.textSecondary, marginTop: SPACING.xs },
   guestBadge: {
     fontSize: 12,
     color: COLORS.accent,
@@ -95,8 +124,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
-  aboutText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-  },
+  aboutText: { fontSize: 14, color: theme.textSecondary },
 });
