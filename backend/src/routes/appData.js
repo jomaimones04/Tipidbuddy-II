@@ -82,12 +82,45 @@ const createCrudRouter = (Model, idField = 'id') => {
 
   router.put('/:id', async (req, res) => {
     const isCart = Model.modelName === 'Cart';
+    if (isCart && req.body?.isCompleted === true) {
+      const totalSpent = req.body.totalSpent;
+      const completedAt = Date.parse(req.body.completedAt);
+      if (
+        !Array.isArray(req.body.items) ||
+        !Number.isFinite(totalSpent) ||
+        totalSpent < 0 ||
+        !Number.isFinite(completedAt)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'A completed trip requires items, a valid completion date, and a non-negative total.',
+        });
+      }
+
+      const invalidItem = req.body.items.some(
+        (item) =>
+          !item ||
+          typeof item.id !== 'string' ||
+          !item.id.trim() ||
+          typeof item.name !== 'string' ||
+          !item.name.trim() ||
+          !Number.isFinite(item.quantity) ||
+          item.quantity <= 0 ||
+          !Number.isFinite(item.estimatedPrice) ||
+          item.estimatedPrice < 0 ||
+          (item.actualPrice != null &&
+            (!Number.isFinite(item.actualPrice) || item.actualPrice < 0))
+      );
+      if (invalidItem) {
+        return res.status(400).json({
+          success: false,
+          message: 'Completed trip items require an ID, name, positive quantity, and valid prices.',
+        });
+      }
+    }
+
     if (isCart) {
-      console.log('[CompleteTrip] Request received');
-      console.log('[Backend] Cart ID:', req.params.id);
-      console.log('[Backend] Items:', Array.isArray(req.body?.items) ? req.body.items.length : 'unknown');
-      console.log('[Backend] Total:', req.body?.totalSpent ?? 'unknown');
-      console.log('[CompleteTrip] Updating MongoDB');
+      console.log('[CompleteTrip] Saving trip to MongoDB');
     }
     try {
       const saved = await withMongoRetry(
@@ -100,19 +133,7 @@ const createCrudRouter = (Model, idField = 'id') => {
         `${Model.modelName} update`
       );
       if (isCart) {
-        console.log('[CompleteTrip] MongoDB update successful');
-        console.log(
-          '[Mongo] Cart saved',
-          saved.id,
-          'isCompleted=',
-          saved.isCompleted,
-          'items=',
-          saved.items?.length,
-          'totalSpent=',
-          saved.totalSpent,
-          'completedAt=',
-          saved.completedAt
-        );
+        console.log('[CompleteTrip] MongoDB save succeeded');
       }
       res.json({ success: true, data: stripMongo(saved) });
     } catch (error) {

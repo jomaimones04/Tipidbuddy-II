@@ -14,6 +14,7 @@ const groceryItemSchema = new mongoose.Schema(
     storeId: String,
     barcode: String,
     barcodeType: String,
+    imageUrl: String,
     priceHistory: { type: Array, default: [] },
     lastUpdated: String,
   },

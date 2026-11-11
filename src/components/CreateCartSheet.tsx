@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   TouchableOpacity,
   TextInput,
   Alert,
@@ -16,6 +18,7 @@ import { SPACING } from '@constants/index';
 import { generateId } from '@utils/index';
 import { useTheme } from '../hooks/useTheme';
 import type { Store } from '../types/index';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CreateCartSheetProps {
   visible: boolean;
@@ -34,6 +37,7 @@ export const CreateCartSheet: React.FC<CreateCartSheetProps> = ({
   const [selectedStore, setSelectedStore] = useState<string | undefined>(undefined);
   const [showStoreSheet, setShowStoreSheet] = useState(false);
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = React.useMemo(() => getStyles(theme), [theme]);
   const sheetTranslateY = useRef(new Animated.Value(0)).current;
 
@@ -118,9 +122,17 @@ export const CreateCartSheet: React.FC<CreateCartSheetProps> = ({
         animationType="slide"
         onRequestClose={onClose}
       >
-        <View style={styles.overlay}>
+        <KeyboardAvoidingView
+          style={styles.overlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          enabled={visible}
+        >
           <Animated.View
-            style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}
+            style={[
+              styles.sheet,
+              { paddingBottom: Math.max(insets.bottom, SPACING.lg) },
+              { transform: [{ translateY: sheetTranslateY }] },
+            ]}
           >
             {/* Drag Handle */}
             <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
@@ -139,7 +151,8 @@ export const CreateCartSheet: React.FC<CreateCartSheetProps> = ({
             <ScrollView
               style={styles.form}
               showsVerticalScrollIndicator={false}
-              scrollEnabled={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
             >
               {/* Name Row */}
               <View style={styles.formRow}>
@@ -192,7 +205,7 @@ export const CreateCartSheet: React.FC<CreateCartSheetProps> = ({
               <Text style={styles.saveButtonText}>Save Cart</Text>
             </TouchableOpacity>
           </Animated.View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Store Selection Sheet - This will be shown from within the cart creation flow */}
@@ -394,8 +407,8 @@ const getStyles = (theme: any) =>
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingHorizontal: SPACING.lg,
-      paddingBottom: SPACING.lg,
-      maxHeight: '70%',
+      maxHeight: '90%',
+      flexShrink: 1,
       borderWidth: 1,
       borderColor: theme.border,
     },
@@ -424,6 +437,7 @@ const getStyles = (theme: any) =>
     },
     form: {
       marginBottom: SPACING.lg,
+      flexShrink: 1,
     },
     formRow: {
       flexDirection: 'row',
@@ -658,4 +672,3 @@ const getStoreSheetStyles = (theme: any) =>
       color: theme.isDark ? theme.background : '#FFFFFF',
     },
   });
-

@@ -12,7 +12,11 @@ build/
 web-build/
 .env
 .env.local
+.env.*
+!.env.example
 backend/.env
+backend/.env.*
+!backend/.env.example
 .DS_Store
 *.log
 npm-debug.*

@@ -6,6 +6,7 @@ const settingsSchema = new mongoose.Schema(
     defaultBudget: Number,
     notificationsEnabled: Boolean,
     isGuest: Boolean,
+    themeMode: { type: String, enum: ['light', 'dark', 'system'] },
     familyMembers: { type: Array, default: [] },
   },
   { timestamps: true }

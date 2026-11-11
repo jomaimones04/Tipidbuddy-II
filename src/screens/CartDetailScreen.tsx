@@ -75,7 +75,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
       const purchasedItems = cart.items.filter((item) => item.isChecked);
       const tripTotal = purchasedItems.reduce(
         (sum, item) =>
-          sum + (item.actualPrice || item.estimatedPrice) * item.quantity,
+          sum + (item.actualPrice ?? item.estimatedPrice) * item.quantity,
         0
       );
       const updatedCart = {
@@ -106,7 +106,10 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
       const purchaseMap = useGroceryStore.getState().itemPriceHistory;
       const savedPurchases = await persistPurchaseHistory(purchaseMap);
       if (!savedPurchases) {
-        console.error('[CompleteTrip] Price history save failed after cart save; local history is preserved.');
+        Alert.alert(
+          'Trip saved',
+          'The trip was saved, but purchase history could not be synced. It is still saved on this device and will sync when the connection is available.'
+        );
       }
       if (cart.storeId) await addRecentStore(cart.storeId);
 
@@ -116,7 +119,12 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
       navigation.replace('TripSummary', { cartId });
     } catch (error) {
       console.error('[CompleteTrip] Failed to save trip:', error);
-      Alert.alert('Could not save trip', 'An error occurred while saving this trip. Please try again.');
+      const detail =
+        error instanceof Error ? error.message : 'Please check your connection and try again.';
+      Alert.alert(
+        'Could not save trip',
+        `The trip was not saved to the database. Your cart was not cleared. ${detail.slice(0, 300)}`
+      );
     } finally {
       savingTrip.current = false;
       setIsSavingTrip(false);

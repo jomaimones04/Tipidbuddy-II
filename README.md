@@ -32,26 +32,65 @@ A comprehensive grocery shopping list and budget tracking app built with React N
 
 ### Prerequisites
 - Node.js 18+ and npm/yarn
-- Expo CLI (`npm install -g expo-cli`)
+- An Expo/EAS account for cloud Android builds
 
 ### Setup
 
-```bash
-# Install dependencies
+```powershell
+# Install mobile dependencies from the repository root
 npm install
 
-# Start the development server
+# Configure the mobile API URL (local development or your deployed backend)
+Copy-Item .env.example .env
+# Edit .env and set EXPO_PUBLIC_API_BASE_URL
+
+# Start Expo
 npm start
-
-# Run on iOS
-npm run ios
-
-# Run on Android
-npm run android
-
-# Run on web
-npm run web
 ```
+
+### Backend and MongoDB Atlas
+
+The Express API and MongoDB connection are in `backend/`. The backend connects to Atlas using the existing `connectDatabase()` implementation; the app never receives the MongoDB URI.
+
+1. In MongoDB Atlas, create a database user and allow network access from your hosting provider. If the provider uses changing outbound IPs, follow its recommended Atlas network access setup; do not put Atlas credentials in the mobile `.env`.
+2. Copy `backend/.env.example` to `backend/.env` and set `MONGODB_URI` to the Atlas connection URI for the `Tipidbuddy-II` database. `MONGODB_DATABASE` defaults to `Tipidbuddy-II`; keep it set explicitly.
+3. Install and start locally:
+
+   ```powershell
+   cd backend
+   npm install
+   npm start
+   ```
+
+4. Verify `http://localhost:5000/api/health` reports `success: true` and `database: "connected"`.
+
+For a fresh clone, repeat the two separate `.env` setup steps above. The `.env` files are ignored by Git. MongoDB Atlas remains the persistent database when code is pushed, cloned, or redeployed.
+
+### Deploying the backend
+
+Create a web service on Render or Railway using this repository, with `backend` as the root directory, `npm install` as the build command, and `npm start` as the start command. The service listens on `process.env.PORT` and binds to `0.0.0.0`. Configure these service environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `MONGODB_URI` | Your Atlas connection URI (backend hosting environment only) |
+| `MONGODB_DATABASE` | `Tipidbuddy-II` |
+| `PORT` | Use the port assigned by the hosting provider; set `5000` for local development |
+
+Set the hosting service's health-check path to `/api/health`. The API refuses to start successfully if it cannot connect to MongoDB. Deployment and Atlas access-list setup must be completed in your own accounts; this repository does not contain a deployed backend URL.
+
+### Android APK builds
+
+`EXPO_PUBLIC_API_BASE_URL` is embedded into the app at build time. For an installed APK, configure that variable in the EAS `production` environment to your deployed HTTPS API origin (for example, `https://your-service.example.com`, replaced with your real service URL). Do not use localhost, a private LAN address, or a MongoDB URI. Configure the same variable in EAS for `preview` builds if you use that profile.
+
+Then build a directly installable APK:
+
+```bash
+npx eas-cli build --platform android --profile production-apk
+```
+
+For Expo Go/local development, set `EXPO_PUBLIC_API_BASE_URL` in the root `.env` to your computer's reachable LAN backend URL, or leave it unset while Expo is running on the LAN; the app can then derive the Expo host. A production build has no LAN/localhost fallback and reports a configuration error if its API URL is missing or invalid.
+
+To verify a built APK saves data, open it on a device with internet access, create a cart with items and a store, set item prices, and finish the trip. The app only updates the cart as completed after the API confirms the save; a failed save leaves the cart available for retry. Check the completed cart in the Atlas `carts` collection and its price records in `itempricehistories`, and confirm the hosted `/api/health` endpoint reports a connected database.
 
 ## 📁 Project Structure
 

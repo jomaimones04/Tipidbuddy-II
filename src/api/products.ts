@@ -1,4 +1,7 @@
-import { API_BASE_URL, isLikelyLocalBackendUrl } from '../config/api';
+import {
+  API_BASE_URL,
+  API_CONFIGURATION_ERROR,
+} from '../config/api';
 import type { BarcodeLookupResponse, DetectedProduct, StorePriceInfo } from '../types/product';
 
 const LOOKUP_TIMEOUT_MS = 8000;
@@ -15,10 +18,10 @@ const parseJsonSafely = async (response: Response): Promise<unknown> => {
   }
 };
 
-const connectionFailure = (): BarcodeLookupResponse => ({
+const connectionFailure = (message?: string): BarcodeLookupResponse => ({
   success: false,
   found: false,
-  message:
+  message: message ||
     'Unable to connect to the server. Please check your connection and try again.',
 });
 
@@ -230,8 +233,7 @@ const lookupBackendProduct = async (
   barcode: string,
   barcodeType?: string
 ): Promise<BarcodeLookupResponse | null> => {
-  if (!isLikelyLocalBackendUrl(API_BASE_URL)) {
-    console.log('Skipping backend lookup; API_BASE_URL is not a LAN backend:', API_BASE_URL);
+  if (!API_BASE_URL) {
     return null;
   }
 
@@ -309,16 +311,8 @@ export const lookupProductByBarcode = async (
     };
   }
 
-  if (backendResult === null && !isLikelyLocalBackendUrl(API_BASE_URL)) {
-    return {
-      success: false,
-      found: false,
-      message: 'Product not found',
-    };
-  }
-
   if (backendResult === null) {
-    return connectionFailure();
+    return connectionFailure(API_BASE_URL ? undefined : API_CONFIGURATION_ERROR);
   }
 
   return {
@@ -335,12 +329,8 @@ export const saveManualProduct = async (
     stock?: number;
   }
 ): Promise<BarcodeLookupResponse> => {
-  if (!isLikelyLocalBackendUrl(API_BASE_URL)) {
-    return {
-      success: true,
-      found: true,
-      product,
-    };
+  if (!API_BASE_URL) {
+    return connectionFailure(API_CONFIGURATION_ERROR);
   }
 
   try {
@@ -371,7 +361,8 @@ export const saveStorePrice = async (
   price: number,
   stock?: number
 ): Promise<void> => {
-  if (!isLikelyLocalBackendUrl(API_BASE_URL)) {
+  if (!API_BASE_URL) {
+    console.error('[Product] Store price was not saved:', API_CONFIGURATION_ERROR);
     return;
   }
 

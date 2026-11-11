@@ -988,7 +988,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     right: 0,
     width: '100%',
     flexDirection: 'column',
-    backgroundColor: '#F4F5F7',
+    backgroundColor: theme.isDark ? theme.background : '#F4F5F7',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -1010,7 +1010,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     width: 38,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#C8CBD0',
+    backgroundColor: theme.isDark ? theme.border : '#C8CBD0',
   },
   sheetHeader: {
     minHeight: 52,
@@ -1030,7 +1030,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: theme.text,
   },
   doneAction: {
-    color: '#3AA76D',
+    color: theme.isDark ? theme.primary : '#3AA76D',
     fontSize: 16,
     fontWeight: '700',
     paddingVertical: 8,
@@ -1060,10 +1060,10 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   compactCard: {
     borderRadius: 14,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.isDark ? theme.card : '#FFFFFF',
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#E8E9EB',
+    borderColor: theme.isDark ? theme.border : '#E8E9EB',
   },
   compactCardCompact: {
     paddingHorizontal: 10,
@@ -1121,19 +1121,19 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   },
   categoryValue: {
     maxWidth: '60%',
-    backgroundColor: '#EAF3FF',
+    backgroundColor: theme.isDark ? theme.surface : '#EAF3FF',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   categoryValueText: {
-    color: '#335F8C',
+    color: theme.isDark ? theme.text : '#335F8C',
     fontSize: 13,
     fontWeight: '600',
   },
   cardDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E6E7E9',
+    backgroundColor: theme.isDark ? theme.border : '#E6E7E9',
   },
   currencySign: {
     color: theme.textSecondary,
@@ -1159,7 +1159,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: '#E6E7E9',
+    borderLeftColor: theme.isDark ? theme.border : '#E6E7E9',
   },
   quantityControlCompact: {
     width: 32,
@@ -1185,7 +1185,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     marginHorizontal: 18,
     paddingHorizontal: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DCDDDF',
+    borderTopColor: theme.isDark ? theme.border : '#DCDDDF',
   },
   totalFooterCompact: {
     minHeight: 44,
@@ -1421,7 +1421,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     fontWeight: '600',
   },
   chipTextSelected: {
-    color: '#FFFFFF',
+    color: theme.isDark ? theme.background : '#FFFFFF',
   },
   chipTextUnselected: {
     color: theme.textSecondary,
@@ -1689,21 +1689,21 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     color: theme.text,
   },
   recommendationBanner: {
-    backgroundColor: '#FFFBEB',
-    borderColor: '#F59E0B',
+    backgroundColor: theme.isDark ? '#3B2E16' : '#FFFBEB',
+    borderColor: theme.isDark ? '#8A5A10' : '#F59E0B',
     borderWidth: 1,
     borderRadius: 12,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
   },
   recommendationBannerText: {
-    color: '#B45309',
+    color: theme.isDark ? '#FCD34D' : '#B45309',
     fontSize: 13,
     fontWeight: '600',
   },
   suggestionCard: {
-    backgroundColor: '#F0FDFA',
-    borderColor: '#5EEAD4',
+    backgroundColor: theme.isDark ? '#12312E' : '#F0FDFA',
+    borderColor: theme.isDark ? '#2D7D70' : '#5EEAD4',
     borderWidth: 1,
     borderRadius: 12,
     padding: SPACING.md,
@@ -1724,7 +1724,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   rankingList: {
     marginTop: SPACING.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: theme.isDark ? theme.border : '#E2E8F0',
     paddingTop: SPACING.sm,
     gap: 4,
   },

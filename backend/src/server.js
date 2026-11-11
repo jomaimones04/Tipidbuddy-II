@@ -104,7 +104,9 @@ const start = async () => {
     if (databaseReady) {
       console.log('[MongoDB] Barcode index is managed by the Product schema.');
     } else {
-      console.warn('[MongoDB] Starting API in degraded mode; database health checks will report unavailable.');
+      throw new Error(
+        'MongoDB connection failed. Check MONGODB_URI and MONGODB_DATABASE before starting the API.'
+      );
     }
     app.listen(port, '0.0.0.0', () => {
       console.log(`TipidBuddy API listening on port ${port}`);
