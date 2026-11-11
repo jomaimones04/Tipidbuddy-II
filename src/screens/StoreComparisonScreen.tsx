@@ -1,402 +1,477 @@
 import React, { useMemo } from 'react';
 import {
-  View,
-  Text,
+  ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  FlatList,
-  Alert,
+  View,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useGroceryStore } from '@store/index';
 import { SPACING } from '@constants/index';
-import { formatPesoAmount, getStoreBreakdown } from '@utils/index';
+import { formatDate, formatPesoAmount } from '@utils/index';
+import {
+  mergePurchaseRecords,
+  normalizeProductIdentity,
+} from '../utils/storeBreakdown';
 import { useTheme } from '../hooks/useTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ItemPriceHistoryEntry } from '../types/index';
 
 export const StoreComparisonScreen = ({ route, navigation }: any) => {
-  const { itemId, cartId } = route.params;
-  const { carts, updateCart, getStoreName, getRecordsForItemName } =
-    useGroceryStore();
-  const cart = carts.find((c) => c.id === cartId);
-  const item = cart?.items.find((i) => i.id === itemId);
+  const { itemId, cartId } = route.params || {};
+  const { carts, getStoreName, getRecordsForItemName } = useGroceryStore();
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const styles = React.useMemo(() => getStyles(theme), [theme]);
+  const cart = carts.find((entry) => entry.id === cartId);
+  const item = cart?.items.find((entry) => entry.id === itemId);
 
-  const sorted = useMemo((): ItemPriceHistoryEntry[] => {
+  const purchases = useMemo((): ItemPriceHistoryEntry[] => {
     if (!item) return [];
 
-    const records: ItemPriceHistoryEntry[] = [...getRecordsForItemName(item.name)];
-    carts.forEach((c) => {
-      if (c.isCompleted) {
-        c.items.forEach((i) => {
-          if (
-            i.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
-            Number.isFinite(i.actualPrice ?? i.estimatedPrice)
-          ) {
-            records.push({
-              storeId: c.storeId || 'local',
-              storeName: getStoreName(c.storeId) || 'Saved cart',
-              price: i.actualPrice || i.estimatedPrice,
-              date: c.completedAt || c.date || new Date().toISOString(),
-            });
-          }
-        });
-      }
-    });
-
-    return getStoreBreakdown(records);
-  }, [item, carts, getRecordsForItemName, getStoreName]);
-
-  if (!item) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.itemName}>Item not found</Text>
-      </View>
-    );
-  }
-
-  const getTimeAgo = (dateString: string) => {
-    const diffTime = Math.abs(new Date().getTime() - new Date(dateString).getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays === 0) return 'today';
-    if (diffDays === 1) return 'yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    const diffWeeks = Math.floor(diffDays / 7);
-    if (diffWeeks === 1) return '1 week ago';
-    return `${diffWeeks} weeks ago`;
-  };
-
-  const lowestPrice = sorted.length > 0 ? sorted[0].price : 0;
-
-  const handleSetPreferredStore = async (storeId: string) => {
-    if (!cart) return;
-    const updatedItems = cart.items.map((i) =>
-      i.id === item.id ? { ...i, storeId } : i
-    );
-    const updatedCart = { ...cart, items: updatedItems };
-    await updateCart(updatedCart);
-    Alert.alert(
-      'Preferred Store Set',
-      `Preferred store updated to ${getStoreName(storeId === 'local' ? undefined : storeId)} for ${item.name}.`
-    );
-  };
-
-  const isPreferredStore = (store: ItemPriceHistoryEntry) => {
-    const cartStoreName = getStoreName(cart?.storeId).toLowerCase().trim();
-    return (
-      item.storeId === store.storeId ||
-      store.storeName.toLowerCase().trim() === cartStoreName
-    );
-  };
-
-  const renderStoreCard = ({ item: store }: { item: ItemPriceHistoryEntry }) => {
-    const difference = store.price - lowestPrice;
-    const timeAgo = getTimeAgo(store.date);
-    const isPreferred = isPreferredStore(store);
-    const isCheapest = store.price === lowestPrice;
-
-    return (
-      <View style={styles.storeCard}>
-        <View style={styles.storeHeader}>
-          <View style={styles.storeInfo}>
-            <Text style={styles.storeName}>{store.storeName}</Text>
-            <Text style={styles.storeDate}>Last bought {timeAgo}</Text>
-          </View>
-          <View style={styles.storePriceSection}>
-            <Text style={styles.price}>₱{formatPesoAmount(store.price)}</Text>
-            {isCheapest ? (
-              <Text style={styles.bestPrice}>✅ Cheapest</Text>
-            ) : difference > 0 ? (
-              <Text style={styles.difference}>
-                +₱{formatPesoAmount(difference)}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-
-        {!cart?.isCompleted ? (
-          <TouchableOpacity
-            style={[
-              styles.preferredButton,
-              isPreferred && styles.preferredButtonActive,
-            ]}
-            onPress={() => handleSetPreferredStore(store.storeId)}
-          >
-            <Text
-              style={[
-                styles.preferredButtonText,
-                isPreferred && styles.preferredButtonTextActive,
-              ]}
-            >
-              {isPreferred ? '★ Preferred Store' : 'Shop here next time'}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          isPreferred && (
-            <View
-              style={[
-                styles.preferredButton,
-                styles.preferredButtonActive,
-                { opacity: 0.6 },
-              ]}
-            >
-              <Text
-                style={[styles.preferredButtonText, styles.preferredButtonTextActive]}
-              >
-                ★ Preferred Store
-              </Text>
-            </View>
+    const recordedPurchases = getRecordsForItemName(item.name);
+    const purchasesFromCompletedCarts = carts
+      .filter((entry) => entry.isCompleted)
+      .flatMap((entry) =>
+        entry.items
+          .filter(
+            (purchasedItem) =>
+              purchasedItem.isChecked &&
+              normalizeProductIdentity(purchasedItem.name) ===
+                normalizeProductIdentity(item.name) &&
+              Number.isFinite(
+                purchasedItem.actualPrice ?? purchasedItem.estimatedPrice
+              )
           )
-        )}
-      </View>
-    );
+          .map((purchasedItem) => ({
+            storeId: entry.storeId || 'local',
+            storeName: getStoreName(entry.storeId) || 'Local',
+            price:
+              purchasedItem.actualPrice ?? purchasedItem.estimatedPrice,
+            date: entry.completedAt || entry.date,
+            purchaseId: `${entry.id}:${purchasedItem.id}`,
+            cartId: entry.id,
+            itemId: purchasedItem.id,
+          }))
+      );
+
+    return mergePurchaseRecords(
+      recordedPurchases,
+      purchasesFromCompletedCarts
+    )
+      .filter(
+        (purchase) =>
+          Number.isFinite(purchase.price) &&
+          purchase.price >= 0 &&
+          Number.isFinite(new Date(purchase.date).getTime())
+      )
+      .sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+  }, [carts, getRecordsForItemName, getStoreName, item]);
+
+  const latestPriceByStore = useMemo(() => {
+    const byStore = new Map<string, ItemPriceHistoryEntry>();
+    for (const purchase of purchases) {
+      const storeKey =
+        purchase.storeId || normalizeProductIdentity(purchase.storeName);
+      byStore.set(storeKey, purchase);
+    }
+    return [...byStore.values()].sort((a, b) => a.price - b.price);
+  }, [purchases]);
+
+  const latestPurchase = purchases[purchases.length - 1];
+  const previousPurchase = purchases[purchases.length - 2];
+  const cheapestPurchase = latestPriceByStore[0];
+  const highestPrice = latestPriceByStore.reduce(
+    (highest, purchase) => Math.max(highest, purchase.price),
+    0
+  );
+  const priceChange = latestPurchase && previousPurchase
+    ? previousPurchase.price - latestPurchase.price
+    : null;
+
+  const formatPurchaseDate = (date: string) => {
+    const parsedDate = new Date(date);
+    return Number.isNaN(parsedDate.getTime()) ? 'Date unavailable' : formatDate(date);
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top, paddingBottom: insets.bottom },
+      ]}
+    >
       <View style={styles.header}>
-        <Text style={styles.title}>Store Comparison</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <MaterialIcons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Store Prices</Text>
       </View>
 
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemDetail}>
-          Current Price: ₱{formatPesoAmount(item.actualPrice || item.estimatedPrice)}
-        </Text>
-      </View>
-
-      {sorted.length > 0 ? (
-        <>
-          <FlatList
-            data={sorted}
-            renderItem={renderStoreCard}
-            keyExtractor={(store) => `${store.storeId}-${store.storeName.toLowerCase().trim()}`}
-            contentContainerStyle={styles.list}
-            scrollEnabled={true}
-          />
-
-          <View style={styles.recommendationBox}>
-            <View style={styles.recommendationContent}>
-              <Text style={styles.recommendationTitle}>Best Deal:</Text>
-              <Text style={styles.recommendationStore}>{sorted[0].storeName}</Text>
-              <Text style={styles.recommendationPrice}>
-                ₱{formatPesoAmount(sorted[0].price)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.recommendationButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.recommendationButtonText}>Noted</Text>
-            </TouchableOpacity>
-          </View>
-        </>
-      ) : (
+      {!item ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>📍</Text>
-          <Text style={styles.emptyText}>No historical price data yet</Text>
-          <Text style={styles.emptySubtext}>
-            Complete shopping trips to compare prices across stores.
+          <Text style={styles.emptyTitle}>Item not found</Text>
+          <Text style={styles.emptyMessage}>
+            Return to the cart and select an item to view its purchase history.
           </Text>
-          <TouchableOpacity
-            style={styles.backHomeButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backHomeButtonText}>Go Back</Text>
-          </TouchableOpacity>
         </View>
+      ) : (
+        <>
+          <View style={styles.productHeader}>
+            <Text style={styles.productName}>{item.name}</Text>
+          </View>
+
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          >
+            {purchases.length === 0 ? (
+              <View style={styles.emptyCard}>
+                <MaterialIcons
+                  name="price-change"
+                  size={36}
+                  color={theme.textMuted}
+                />
+                <Text style={styles.emptyTitle}>No price history yet</Text>
+                <Text style={styles.emptyMessage}>
+                  Purchase this item on a completed trip to start tracking its
+                  price. Comparisons appear automatically after you buy it from
+                  other stores.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Latest purchase</Text>
+                  <View style={styles.purchaseHeadline}>
+                    <View style={styles.purchaseStore}>
+                      <Text style={styles.storeName}>
+                        {latestPurchase.storeName}
+                      </Text>
+                      <Text style={styles.purchaseDate}>
+                        {formatPurchaseDate(latestPurchase.date)}
+                      </Text>
+                    </View>
+                    <Text style={styles.latestPrice}>
+                      ₱{formatPesoAmount(latestPurchase.price)}
+                    </Text>
+                  </View>
+                  {previousPurchase && (
+                    <View style={styles.previousPurchaseRow}>
+                      <Text style={styles.previousPurchaseLabel}>
+                        Previous: {previousPurchase.storeName}
+                      </Text>
+                      <Text style={styles.previousPurchasePrice}>
+                        ₱{formatPesoAmount(previousPurchase.price)}
+                      </Text>
+                    </View>
+                  )}
+                  {priceChange !== null && Math.abs(priceChange) > 0.00001 && (
+                    <Text
+                      style={[
+                        styles.priceChange,
+                        priceChange > 0
+                          ? styles.savingsText
+                          : styles.moreExpensiveText,
+                      ]}
+                    >
+                      {priceChange > 0
+                        ? `You saved ₱${formatPesoAmount(priceChange)} at ${latestPurchase.storeName}.`
+                        : `₱${formatPesoAmount(Math.abs(priceChange))} more expensive than your previous purchase.`}
+                    </Text>
+                  )}
+                  {priceChange === 0 && previousPurchase && (
+                    <Text style={styles.purchaseDate}>
+                      Same price as your previous purchase.
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.card}>
+                  <Text style={styles.sectionTitle}>Latest price by store</Text>
+                  {latestPriceByStore.map((purchase) => {
+                    const isCheapest =
+                      purchase.storeId === cheapestPurchase.storeId &&
+                      purchase.storeName === cheapestPurchase.storeName;
+                    const difference = purchase.price - cheapestPurchase.price;
+                    return (
+                      <View
+                        key={`${purchase.storeId}:${purchase.storeName}`}
+                        style={styles.storeRow}
+                      >
+                        <View style={styles.storeRowInfo}>
+                          <Text style={styles.storeName}>
+                            {purchase.storeName}
+                          </Text>
+                          {isCheapest && latestPriceByStore.length > 1 && (
+                            <Text style={styles.cheapestLabel}>Cheapest</Text>
+                          )}
+                        </View>
+                        <View style={styles.storePriceInfo}>
+                          <Text
+                            style={[
+                              styles.storePrice,
+                              isCheapest && styles.savingsText,
+                            ]}
+                          >
+                            ₱{formatPesoAmount(purchase.price)}
+                          </Text>
+                          {!isCheapest && difference > 0 && (
+                            <Text style={styles.purchaseDate}>
+                              +₱{formatPesoAmount(difference)}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })}
+                  {latestPriceByStore.length > 1 && highestPrice > cheapestPurchase.price && (
+                    <Text style={[styles.priceChange, styles.savingsText]}>
+                      You could save ₱
+                      {formatPesoAmount(highestPrice - cheapestPurchase.price)}{' '}
+                      at {cheapestPurchase.storeName} compared with{' '}
+                      {latestPriceByStore.find(
+                        (purchase) => purchase.price === highestPrice
+                      )?.storeName}
+                      .
+                    </Text>
+                  )}
+                  {latestPriceByStore.length === 1 && (
+                    <Text style={styles.emptyHint}>
+                      Buy this item at another store to see an automatic price
+                      comparison.
+                    </Text>
+                  )}
+                </View>
+
+                {purchases.length > 1 && (
+                  <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Purchase history</Text>
+                    {[...purchases].reverse().map((purchase, index) => (
+                      <View
+                        key={
+                          purchase.purchaseId ||
+                          `${purchase.storeId}:${purchase.date}:${purchase.price}:${index}`
+                        }
+                        style={[
+                          styles.historyRow,
+                          index < purchases.length - 1 && styles.historyDivider,
+                        ]}
+                      >
+                        <View style={styles.storeRowInfo}>
+                          <Text style={styles.storeName}>
+                            {purchase.storeName}
+                          </Text>
+                          <Text style={styles.purchaseDate}>
+                            {formatPurchaseDate(purchase.date)}
+                          </Text>
+                        </View>
+                        <Text style={styles.storePrice}>
+                          ₱{formatPesoAmount(purchase.price)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
+          </ScrollView>
+        </>
       )}
     </View>
   );
 };
 
-const getStyles = (theme: any) =>
+const getStyles = (theme: ReturnType<typeof useTheme>) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.background,
     },
     header: {
+      minHeight: 56,
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: SPACING.md,
-      paddingHorizontal: SPACING.lg,
-      backgroundColor: theme.header,
-    },
-    backButton: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.headerText,
-    },
-    title: {
-      fontSize: 26,
-      fontWeight: '600',
-      color: theme.headerText,
-    },
-    placeholder: {
-      width: 60,
-    },
-    itemInfo: {
-      paddingHorizontal: SPACING.lg,
-      paddingVertical: SPACING.lg,
+      paddingHorizontal: SPACING.md,
       backgroundColor: theme.surface,
-      borderBottomWidth: 1,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.border,
     },
-    itemName: {
-      fontSize: 18,
-      fontWeight: '600',
+    backButton: {
+      width: 44,
+      height: 48,
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
       color: theme.text,
     },
-    itemDetail: {
-      fontSize: 13,
-      color: theme.textSecondary,
-      marginTop: SPACING.xs,
+    productHeader: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.md,
+      backgroundColor: theme.surface,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
     },
-    list: {
+    productName: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: theme.text,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
       padding: SPACING.lg,
+      paddingBottom: SPACING.xl,
       gap: SPACING.md,
     },
-    storeCard: {
-      paddingHorizontal: SPACING.md,
-      paddingVertical: SPACING.lg,
+    card: {
+      padding: SPACING.lg,
       backgroundColor: theme.card,
-      borderRadius: 12,
-      marginBottom: SPACING.md,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.border,
+      gap: SPACING.md,
     },
-    storeHeader: {
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: theme.textSecondary,
+    },
+    purchaseHeadline: {
       flexDirection: 'row',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: SPACING.md,
+      gap: SPACING.md,
     },
-    storeInfo: {
+    purchaseStore: {
       flex: 1,
       gap: 4,
+    },
+    previousPurchaseRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: SPACING.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+    },
+    previousPurchaseLabel: {
+      fontSize: 13,
+      color: theme.textSecondary,
+    },
+    previousPurchasePrice: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.text,
     },
     storeName: {
       fontSize: 16,
       fontWeight: '600',
       color: theme.text,
     },
-    storeDate: {
+    purchaseDate: {
       fontSize: 12,
       color: theme.textSecondary,
     },
-    storePriceSection: {
-      alignItems: 'flex-end',
-      gap: 4,
-    },
-    price: {
-      fontSize: 18,
-      fontWeight: 'bold',
+    latestPrice: {
+      fontSize: 22,
+      fontWeight: '700',
       color: theme.primary,
     },
-    difference: {
-      fontSize: 12,
-      color: theme.danger,
-      fontWeight: '600',
-    },
-    bestPrice: {
-      fontSize: 12,
-      color: theme.success,
-      fontWeight: '600',
-    },
-    preferredButton: {
-      backgroundColor: theme.card,
-      borderColor: theme.primary,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingVertical: SPACING.sm,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    preferredButtonActive: {
-      backgroundColor: theme.primary,
-      borderColor: theme.primary,
-    },
-    preferredButtonText: {
-      color: theme.primary,
-      fontWeight: '600',
-      fontSize: 13,
-    },
-    preferredButtonTextActive: {
-      color: theme.isDark ? theme.background : '#FFFFFF',
-    },
-    recommendationBox: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: SPACING.lg,
-      backgroundColor: theme.isDark ? 'rgba(74, 222, 128, 0.15)' : 'rgba(45, 125, 70, 0.15)',
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
-      gap: SPACING.lg,
-    },
-    recommendationContent: {
-      flex: 1,
-    },
-    recommendationTitle: {
-      fontSize: 12,
-      color: theme.textSecondary,
-    },
-    recommendationStore: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.success,
-    },
-    recommendationPrice: {
+    priceChange: {
       fontSize: 14,
       fontWeight: '600',
+      lineHeight: 20,
+    },
+    savingsText: {
+      color: theme.success,
+    },
+    moreExpensiveText: {
+      color: theme.danger,
+    },
+    storeRow: {
+      minHeight: 52,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: SPACING.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
+    },
+    storeRowInfo: {
+      flex: 1,
+      gap: 3,
+    },
+    storePriceInfo: {
+      alignItems: 'flex-end',
+      gap: 3,
+    },
+    storePrice: {
+      fontSize: 16,
+      fontWeight: '700',
       color: theme.text,
-      marginTop: SPACING.xs,
     },
-    recommendationButton: {
-      paddingHorizontal: SPACING.lg,
-      paddingVertical: SPACING.sm,
-      backgroundColor: theme.success,
-      borderRadius: 8,
-    },
-    recommendationButtonText: {
+    cheapestLabel: {
       fontSize: 12,
       fontWeight: '600',
-      color: theme.isDark ? theme.background : '#FFFFFF',
+      color: theme.success,
+    },
+    emptyHint: {
+      marginTop: SPACING.xs,
+      color: theme.textSecondary,
+      fontSize: 13,
+      lineHeight: 19,
+    },
+    historyRow: {
+      minHeight: 54,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: SPACING.md,
+    },
+    historyDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.border,
     },
     emptyState: {
       flex: 1,
-      justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: SPACING.xl,
-      paddingBottom: SPACING.xl * 2,
+      justifyContent: 'center',
+      padding: SPACING.xl,
+      gap: SPACING.md,
     },
-    emptyIcon: {
-      fontSize: 64,
-      marginBottom: SPACING.lg,
+    emptyCard: {
+      alignItems: 'center',
+      padding: SPACING.xl,
+      backgroundColor: theme.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+      gap: SPACING.md,
     },
-    emptyText: {
+    emptyTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: theme.text,
-      marginBottom: SPACING.sm,
+      textAlign: 'center',
     },
-    emptySubtext: {
+    emptyMessage: {
       fontSize: 14,
       color: theme.textSecondary,
-      textAlign: 'center',
       lineHeight: 20,
-      marginBottom: SPACING.lg,
-    },
-    backHomeButton: {
-      backgroundColor: theme.primary,
-      borderRadius: 8,
-      paddingHorizontal: SPACING.lg,
-      paddingVertical: SPACING.md,
-    },
-    backHomeButtonText: {
-      color: theme.isDark ? theme.background : '#FFFFFF',
-      fontWeight: '600',
-      fontSize: 14,
+      textAlign: 'center',
     },
   });

@@ -4,6 +4,7 @@ import {
   DefaultTheme as NavigationLightTheme,
   DarkTheme as NavigationDarkTheme,
   getFocusedRouteNameFromRoute,
+  type LinkingOptions,
 } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -30,12 +31,36 @@ import { FamilySharingScreen } from '@screens/FamilySharingScreen';
 import { ExportModal } from '@screens/ExportModal';
 import { TemplatesScreen } from '@screens/TemplatesScreen';
 import { ComingSoonScreen } from '@screens/ComingSoonScreen';
+import {
+  AuthWelcomeScreen,
+  ForgotPasswordScreen,
+  LoginScreen,
+  PasswordResetScreen,
+  RegisterScreen,
+} from '@screens/AuthScreens';
 
 import { useTheme } from '../hooks/useTheme';
-import type { RootStackParamList, TabParamList } from '../types/index';
+import type {
+  RootStackParamList,
+  SettingsStackParamList,
+  TabParamList,
+} from '../types/index';
 
 const Stack = createStackNavigator<RootStackParamList>();
+const SettingsStack = createStackNavigator<SettingsStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const linking: LinkingOptions<TabParamList> = {
+  prefixes: ['tipidbuddy://'],
+  config: {
+    screens: {
+      SettingsTab: {
+        screens: {
+          PasswordReset: 'reset-password',
+        },
+      },
+    },
+  },
+};
 
 // Consistent header configuration used across all screens
 const getHeaderConfig = (title: string, theme: ReturnType<typeof useTheme>) => ({
@@ -144,7 +169,7 @@ const HomeTabStack = () => {
         name="StoreComparison"
         component={StoreComparisonScreen}
         options={{
-          ...getHeaderConfig('Store Prices', theme),
+          headerShown: false,
           ...slideFromRightOptions,
         }}
       />
@@ -194,18 +219,23 @@ const HomeTabStack = () => {
 
 const SettingsTabStack = () => {
   const theme = useTheme();
-  return <Stack.Navigator
+  return <SettingsStack.Navigator
     screenOptions={{
       headerShown: true,
       ...slideFromRightOptions,
     }}
   >
-    <Stack.Screen
+    <SettingsStack.Screen
       name="SettingsMain"
       component={SettingsScreen}
       options={getHeaderConfig('Account', theme)}
     />
-    <Stack.Screen
+    <SettingsStack.Screen name="AuthWelcome" component={AuthWelcomeScreen} options={{ headerShown: false }} />
+    <SettingsStack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+    <SettingsStack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+    <SettingsStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
+    <SettingsStack.Screen name="PasswordReset" component={PasswordResetScreen} options={{ headerShown: false }} />
+    <SettingsStack.Screen
       name="CategoryManager"
       component={CategoryManagerScreen}
       options={{
@@ -213,7 +243,7 @@ const SettingsTabStack = () => {
         ...slideFromRightOptions,
       }}
     />
-    <Stack.Screen
+    <SettingsStack.Screen
       name="FamilySharing"
       component={FamilySharingScreen}
       options={{
@@ -221,7 +251,7 @@ const SettingsTabStack = () => {
         ...slideFromRightOptions,
       }}
     />
-  </Stack.Navigator>;
+  </SettingsStack.Navigator>;
 };
 
 const InsightsTabStack = () => {
@@ -366,7 +396,10 @@ export default function NavigationRoot() {
     },
   };
   return (
-    <NavigationContainer theme={navigationTheme}>
+    <NavigationContainer<TabParamList>
+      theme={navigationTheme}
+      linking={linking}
+    >
       <TabNavigator />
     </NavigationContainer>
   );

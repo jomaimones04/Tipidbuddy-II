@@ -20,6 +20,8 @@ import {
   getStoreBreakdown,
   getMostRecentPurchase,
   getStoreStatsBreakdown,
+  mergePurchaseRecords,
+  normalizeProductIdentity,
 } from '../utils/storeBreakdown';
 import { generateId } from '../utils/index';
 import {
@@ -70,6 +72,41 @@ const normalizeCarts = (carts: Cart[]) => {
   });
 
   return { carts: normalized, changed };
+};
+
+const getMatchingPriceHistoryEntries = (
+  history: ItemPriceHistoryMap,
+  identity: string
+) =>
+  Object.entries(history).filter(
+    ([key, group]) =>
+      normalizeProductIdentity(group.itemName || key) === identity
+  );
+
+const mergePriceHistoryMaps = (
+  ...histories: ItemPriceHistoryMap[]
+): ItemPriceHistoryMap => {
+  const merged: ItemPriceHistoryMap = {};
+
+  for (const history of histories) {
+    for (const [storedKey, group] of Object.entries(history)) {
+      const key = normalizeProductIdentity(group.itemName || storedKey);
+      if (!key) continue;
+
+      const existing = merged[key];
+      merged[key] = {
+        ...existing,
+        ...group,
+        itemName: group.itemName || existing?.itemName || storedKey,
+        records: mergePurchaseRecords(
+          existing?.records || [],
+          group.records || []
+        ),
+      };
+    }
+  }
+
+  return merged;
 };
 import { getHealth } from '../api/client';
 
@@ -543,16 +580,29 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
 
   addPriceRecord: async (itemName, category, categoryColor, record, syncRemote = true) => {
     try {
-      const key = itemName.toLowerCase().trim();
-      const existing = get().itemPriceHistory[key];
+      const key = normalizeProductIdentity(itemName);
+      if (!key) return;
+
+      const currentHistory = get().itemPriceHistory;
+      const matchingEntries = getMatchingPriceHistoryEntries(
+        currentHistory,
+        key
+      );
+      const matchingKeys = new Set(matchingEntries.map(([entryKey]) => entryKey));
+      const records = mergePurchaseRecords(
+        ...matchingEntries.map(([, group]) => group.records),
+        [record]
+      );
 
       const itemPriceHistory: ItemPriceHistoryMap = {
-        ...get().itemPriceHistory,
+        ...Object.fromEntries(
+          Object.entries(currentHistory).filter(([entryKey]) => !matchingKeys.has(entryKey))
+        ),
         [key]: {
           itemName,
           category,
           categoryColor,
-          records: existing ? [...existing.records, record] : [record],
+          records,
         },
       };
 
@@ -568,8 +618,12 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
   },
 
   getRecordsForItemName: (itemName) => {
-    const key = itemName.toLowerCase().trim();
-    return get().itemPriceHistory[key]?.records ?? [];
+    const key = normalizeProductIdentity(itemName);
+    return mergePurchaseRecords(
+      ...getMatchingPriceHistoryEntries(get().itemPriceHistory, key).map(
+        ([, group]) => group.records
+      )
+    );
   },
 
   getItemStats: (itemName) => {
@@ -598,12 +652,16 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const purchasedAt = cart.completedAt || cart.date;
 
       for (const item of cart.items) {
-        const key = item.name.toLowerCase().trim();
+        if (!item.isChecked) continue;
+        const key = normalizeProductIdentity(item.name);
         const record: ItemPriceHistoryEntry = {
           storeId: cart.storeId || 'local',
           storeName,
           price: item.actualPrice ?? item.estimatedPrice,
           date: purchasedAt,
+          purchaseId: `${cart.id}:${item.id}`,
+          cartId: cart.id,
+          itemId: item.id,
         };
         const existing = itemPriceHistory[key];
         itemPriceHistory[key] = {
@@ -626,18 +684,6 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
   },
 
   mergeItemPriceHistoryFromCompletedCarts: async () => {
-    const isDuplicate = (
-      records: ItemPriceHistoryEntry[],
-      record: ItemPriceHistoryEntry
-    ) =>
-      records.some(
-        (r) =>
-          r.storeId === record.storeId &&
-          r.storeName === record.storeName &&
-          r.price === record.price &&
-          r.date === record.date
-      );
-
     const itemPriceHistory = { ...get().itemPriceHistory };
     let changed = false;
 
@@ -646,30 +692,41 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
       const purchasedAt = cart.completedAt || cart.date;
 
       for (const item of cart.items) {
-        const key = item.name.toLowerCase().trim();
+        if (!item.isChecked) continue;
+        const key = normalizeProductIdentity(item.name);
         const record: ItemPriceHistoryEntry = {
           storeId: cart.storeId || 'local',
           storeName,
           price: item.actualPrice ?? item.estimatedPrice,
           date: purchasedAt,
+          purchaseId: `${cart.id}:${item.id}`,
+          cartId: cart.id,
+          itemId: item.id,
         };
-        const existing = itemPriceHistory[key];
-
-        if (!existing) {
-          itemPriceHistory[key] = {
-            itemName: item.name,
-            category: item.category,
-            categoryColor: item.categoryColor,
-            records: [record],
-          };
-          changed = true;
-        } else if (!isDuplicate(existing.records, record)) {
-          itemPriceHistory[key] = {
-            ...existing,
-            records: [...existing.records, record],
-          };
+        const matchingEntries = getMatchingPriceHistoryEntries(
+          itemPriceHistory,
+          key
+        );
+        const matchingKeys = new Set(matchingEntries.map(([entryKey]) => entryKey));
+        const records = mergePurchaseRecords(
+          ...matchingEntries.map(([, group]) => group.records),
+          [record]
+        );
+        if (
+          records.length !==
+            matchingEntries.reduce((count, [, group]) => count + group.records.length, 0) ||
+          matchingEntries.length > 1 ||
+          (matchingEntries.length === 1 && matchingEntries[0][0] !== key)
+        ) {
           changed = true;
         }
+        matchingKeys.forEach((entryKey) => delete itemPriceHistory[entryKey]);
+        itemPriceHistory[key] = {
+          itemName: item.name,
+          category: item.category,
+          categoryColor: item.categoryColor,
+          records,
+        };
       }
     }
 
@@ -753,11 +810,16 @@ export const useGroceryStore = create<GroceryStore>((set, get) => ({
         }
 
         if (remotePurchases?.data && Object.keys(remotePurchases.data).length > 0) {
+          const itemPriceHistory = mergePriceHistoryMaps(
+            get().itemPriceHistory,
+            remotePurchases.data
+          );
           await AsyncStorage.setItem(
             STORAGE_KEYS.ITEM_PRICE_HISTORY,
-            JSON.stringify(remotePurchases.data)
+            JSON.stringify(itemPriceHistory)
           );
-          set({ itemPriceHistory: remotePurchases.data });
+          set({ itemPriceHistory });
+          syncPurchases(itemPriceHistory);
         } else {
           syncPurchases(get().itemPriceHistory);
         }

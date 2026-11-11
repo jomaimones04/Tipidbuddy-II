@@ -98,8 +98,11 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         await addPriceRecord(item.name, item.category, item.categoryColor, {
           storeId: cart.storeId || 'local',
           storeName,
-          price: item.actualPrice || item.estimatedPrice,
+          price: item.actualPrice ?? item.estimatedPrice,
           date: purchasedAt,
+          purchaseId: `${cart.id}:${item.id}`,
+          cartId: cart.id,
+          itemId: item.id,
         }, false);
       }
 
@@ -311,7 +314,15 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         text: 'Delete',
         onPress: async () => {
           const updatedItems = cart.items.filter((i) => i.id !== itemId);
-          await updateCart({ ...cart, items: updatedItems });
+          const totalSpent = updatedItems.reduce(
+            (sum, item) =>
+              sum +
+              (item.isChecked
+                ? (item.actualPrice ?? item.estimatedPrice) * item.quantity
+                : 0),
+            0
+          );
+          await updateCart({ ...cart, items: updatedItems, totalSpent });
           await Haptics.notificationAsync(
             Haptics.NotificationFeedbackType.Success
           );
@@ -728,6 +739,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         sections={sections}
         keyExtractor={(item) => item.id}
         scrollEnabled={true}
+        removeClippedSubviews={false}
         style={styles.content}
         contentContainerStyle={{ paddingBottom: SPACING.xl * 3 }}
         renderSectionHeader={({ section }) => (
@@ -740,13 +752,9 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
         )}
         renderItem={({ item }) => (
           <Swipeable
-            ref={(ref) => {
-              if (!ref && openedSwipeableRef.current) {
-                openedSwipeableRef.current = null;
-              }
-            }}
-            friction={2}
-            rightThreshold={40}
+            childrenContainerStyle={styles.swipeableForeground}
+            friction={1.5}
+            rightThreshold={82}
             overshootRight={false}
             enabled={!cart.isCompleted}
             onSwipeableOpen={(direction, swipeable) => {
@@ -775,7 +783,7 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                   accessibilityRole="button"
                   accessibilityLabel={`Edit ${item.name}`}
                 >
-                  <MaterialIcons name="edit" size={22} color={COLORS.white} />
+                  <MaterialIcons name="edit" size={26} color={COLORS.white} />
                   <Text style={styles.swipeActionText}>Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -787,13 +795,13 @@ export const CartDetailScreen = ({ route, navigation }: any) => {
                   accessibilityRole="button"
                   accessibilityLabel={`Delete ${item.name}`}
                 >
-                  <MaterialIcons name="delete-outline" size={22} color={COLORS.white} />
+                  <MaterialIcons name="delete-outline" size={26} color={COLORS.white} />
                   <Text style={styles.swipeActionText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             )}
           >
-          <View style={styles.itemRow} onTouchStart={closeOpenedSwipeable}>
+          <View style={styles.itemRow}>
             <TouchableOpacity
               style={styles.checkbox}
               onPress={() => handleCheckItem(item.id)}
@@ -1002,6 +1010,33 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   content: {
     flex: 1,
   },
+  swipeableForeground: {
+    backgroundColor: theme.surface,
+  },
+  swipeActions: {
+    width: 164,
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+  },
+  swipeAction: {
+    width: 82,
+    minHeight: 72,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  swipeActionText: {
+    color: COLORS.white,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  editSwipeAction: {
+    backgroundColor: COLORS.success,
+  },
+  deleteSwipeAction: {
+    backgroundColor: COLORS.danger,
+  },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1026,6 +1061,7 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.surface,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
@@ -1087,9 +1123,6 @@ const getStyles = (theme: ReturnType<typeof useTheme>) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: theme.text,
-  },
-  actionButton: {
-    padding: 6,
   },
   menuBackdrop: {
     flex: 1,

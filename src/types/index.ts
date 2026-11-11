@@ -1,4 +1,5 @@
 // Global TypeScript types and interfaces
+import type { NavigatorScreenParams } from '@react-navigation/native';
 
 export interface GroceryItem {
   id: string;
@@ -31,6 +32,9 @@ export interface ItemPriceHistoryEntry {
   storeName: string;
   price: number;
   date: string;
+  purchaseId?: string;
+  cartId?: string;
+  itemId?: string;
 }
 
 /** All purchase records for one item name (keyed by normalized name in store) */
@@ -136,15 +140,31 @@ export type RootStackParamList = {
   InsightsMain: undefined;
   // Settings tab stack
   SettingsMain: undefined;
+  AuthWelcome: undefined;
+  Register: undefined;
+  Login: undefined;
+  ForgotPassword: undefined;
+  PasswordReset: { token: string };
   CategoryManager: undefined;
   FamilySharing: undefined;
   Templates: undefined;
   ComingSoon: { featureName: string; icon: string };
 };
 
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
+  AuthWelcome: undefined;
+  Register: undefined;
+  Login: undefined;
+  ForgotPassword: undefined;
+  PasswordReset: { token: string };
+  CategoryManager: undefined;
+  FamilySharing: undefined;
+};
+
 export type TabParamList = {
   HomeTab: undefined;
   InsightsTab: undefined;
   TemplatesTab: undefined;
-  SettingsTab: undefined;
+  SettingsTab: NavigatorScreenParams<SettingsStackParamList> | undefined;
 };

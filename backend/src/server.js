@@ -10,6 +10,7 @@ const {
 } = require('./config/db');
 
 const productRoutes = require('./routes/products');
+const authRoutes = require('./routes/auth');
 const User = require('./models/User');
 
 const {
@@ -89,6 +90,7 @@ app.get('/api/test-db', async (_req, res) => {
 });
 
 app.use('/api/products', productRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/grocery-lists', groceryListsRouter);
 app.use('/api/stores', storesRouter);
 app.use('/api/categories', categoriesRouter);

@@ -10,6 +10,7 @@ import {
 import { useGroceryStore } from '@store/index';
 import { COLORS, SPACING } from '@constants/index';
 import { formatPesoAmount, getStoreStatsBreakdown } from '@utils/index';
+import { normalizeProductIdentity } from '../utils/storeBreakdown';
 import { useTheme } from '../hooks/useTheme';
 import type { ItemPriceHistoryEntry } from '../types/index';
 
@@ -18,7 +19,7 @@ const sortByNewest = (records: ItemPriceHistoryEntry[]) =>
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-export const ItemDetailScreen = ({ route, navigation }: any) => {
+export const ItemDetailScreen = ({ route }: any) => {
   const { itemId, itemName: routeItemName } = route.params;
   const { carts, itemPriceHistory, getRecordsForItemName } = useGroceryStore();
   const theme = useTheme();
@@ -36,8 +37,11 @@ export const ItemDetailScreen = ({ route, navigation }: any) => {
   }, [carts, itemId]);
 
   const resolvedName = routeItemName || cartItem?.name || '';
-  const historyKey = resolvedName.toLowerCase().trim();
-  const historyGroup = itemPriceHistory[historyKey];
+  const historyGroup = Object.values(itemPriceHistory).find(
+    (group) =>
+      normalizeProductIdentity(group.itemName) ===
+      normalizeProductIdentity(resolvedName)
+  );
 
   const priceHistory = useMemo(() => {
     const fromStore = getRecordsForItemName(resolvedName);

@@ -2,6 +2,7 @@
   "expo": {
     "name": "TipidBuddy",
     "slug": "tipidbuddy",
+    "scheme": "tipidbuddy",
     "version": "1.0.0",
     "assetBundlePatterns": [
       "**/*"
@@ -42,7 +43,9 @@
           }
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

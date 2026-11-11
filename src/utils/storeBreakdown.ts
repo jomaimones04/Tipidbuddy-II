@@ -3,7 +3,32 @@ import type { ItemPriceHistoryEntry, PriceRecord } from '../types/index';
 export type StorePriceRecord = Pick<
   PriceRecord | ItemPriceHistoryEntry,
   'storeId' | 'storeName' | 'price' | 'date'
->;
+> & Partial<Pick<ItemPriceHistoryEntry, 'purchaseId' | 'cartId' | 'itemId'>>;
+
+export const normalizeProductIdentity = (name: string): string =>
+  name.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en');
+
+export const mergePurchaseRecords = <T extends StorePriceRecord>(
+  ...recordGroups: T[][]
+): T[] => {
+  const records: T[] = [];
+
+  for (const record of recordGroups.flat()) {
+    const duplicate = records.some(
+      (existing) =>
+        (existing.purchaseId && record.purchaseId
+          ? existing.purchaseId === record.purchaseId
+          : existing.storeId === record.storeId &&
+          existing.storeName.trim().toLocaleLowerCase('en') ===
+            record.storeName.trim().toLocaleLowerCase('en') &&
+          existing.price === record.price &&
+          existing.date === record.date)
+    );
+    if (!duplicate) records.push(record);
+  }
+
+  return records;
+};
 
 /** Latest record per store (by storeName), sorted cheapest first */
 export const getStoreBreakdown = <T extends StorePriceRecord>(
